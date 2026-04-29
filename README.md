@@ -5,6 +5,7 @@ A comprehensive project for managing and deploying Ollama AI models with DevOps 
 ## Project Structure
 
 ```text
+.
 ├── logs/
 │   ├── ollama-macbook-server.log
 │   └── ollama-server.log
@@ -13,58 +14,42 @@ A comprehensive project for managing and deploying Ollama AI models with DevOps 
     ├── modfiles/
     │   ├── modfile-gemma4
     │   └── modfile-qwen-devops
-    ├── scripts/
-    │   ├── .env
-    │   ├── .envexample
-    │   ├── EOD-Stop-models.sh
-    │   ├── docker-compose.yml
-    │   ├── modfile-gemma4
-    │   ├── modfile-qwen-devops
-    │   └── start-models.sh
-    └── test/
+    └── scripts/
+        ├── .env              # local environment (gitignored)
+        ├── .envexample
+        ├── eod.sh
+        ├── docker-compose.yml
+        └── sod.sh
 ```
 
 ## Key Components
 
-- **.kilo/**: Kilo configuration and skills for automation
-- **ollama-macbook/**: Main project directory with scripts and configurations
-- **nomic-embed-text,qwen2.5-coder:14b/**: Ollama model storage
-- **logs/**: Server logs for monitoring
+- **ollama-macbook/**: Main project directory containing scripts, modfiles, and documentation.
+- **modfiles/**: Custom Modelfiles for building optimized Ollama models.
+- **scripts/**: Automation scripts for starting/stopping models and managing Docker services.
+- **.env** (in scripts/): Local environment configuration (not committed; copy from .envexample).
+- **logs/**: Server logs for monitoring and troubleshooting.
 
-## DevOps Standards
-
-### Version Control
-- Use Git for version control with meaningful commit messages
-- Follow semantic versioning for releases
-- Protect main branch with required reviews and CI checks
-
-### CI/CD Pipeline
-- Automated testing on pull requests
-- Automated deployment using scripts in `ollama-macbook/scripts/`
-- Docker Compose for containerized deployments
-- Environment-specific configurations (.env files)
+## Project Features
 
 ### Configuration Management
-- Centralized configuration in `.kilo/` directory
-- Environment variables managed via `.env` files
-- Modfiles for Ollama model configurations
+- Environment variables defined in `.env` (with template `.envexample`) control model selection, paths, and memory optimizations.
+- Modelfiles provide reproducible model builds with tailored parameters for the M4 Pro 24GB.
 
-### Monitoring and Logging
-- Logs stored in `logs/` directory
-- Server logs for troubleshooting
-- Model performance monitoring
+### Automated Model Lifecycle
+- `sod.sh`: Ensures Ollama is running, pulls/base models, builds the custom DevOps model, preloads it, and starts Qdrant.
+- `eod.sh`: Gracefully shuts down Ollama and Docker containers to free system resources.
 
-### Security
-- No secrets committed to repository
-- Environment variables for sensitive data
-- Regular dependency updates
+### Containerized Services
+- Qdrant vector database is managed with Docker Compose for local RAG/embeddings indexing.
 
-### Deployment
-- Automated model startup via `start-models.sh`
-- Graceful shutdown with `EOD-Stop-models.sh`
-- Docker Compose for orchestrated deployments
+### Memory Optimizations
+- Flash attention (`OLLAMA_FLASH_ATTENTION=1`) and KV cache quantization (`OLLAMA_KV_CACHE_TYPE=q4_0`) are enabled by default to fit 14B models within 24GB RAM.
 
-### Testing
-- Test scripts in `test/` directory
-- Integration tests for Ollama API endpoints
-- Validation of model loading and inference
+### Models
+- Base models: `nomic-embed-text` (embeddings), `qwen2.5-coder:14b` (code generation).
+- Custom model: `qwen-devops` (DevOps-tuned, built from modfile-qwen-devops).
+- Optional: `gemma4-devops` (alternative custom model via modfile-gemma4).
+
+### Logging
+- Ollama server logs are written to `logs/ollama-macbook-server.log`.

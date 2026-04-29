@@ -1,0 +1,17 @@
+FROM qwen2.5:7b-instruct
+
+#============================================================================
+# Title:            basic.modelfile
+# Description:      Basic test modfile for Qwen2.5 7B model with standard parameters
+# Author:           Keverall
+# Date:             2026-04-28
+# Version:          1.0.0
+# Hardware:         NVIDIA GeForce RTX 4090 (24GB VRAM)
+# Parameters:       num_ctx=8192, num_batch=512, num_thread=24
+#============================================================================
+
+PARAMETER num_ctx 8192
+PARAMETER num_batch 512
+PARAMETER num_thread 24
+
+SYSTEM """You are a basic test model."""

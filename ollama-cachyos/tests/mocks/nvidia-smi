@@ -1,0 +1,5 @@
+#!/bin/bash
+MOCK_GPU="${TEST_MOCK_GPU:-present}"
+if [ "$MOCK_GPU" = "absent" ]; then exit 127
+elif [ "$MOCK_GPU" = "error" ]; then echo "NVIDIA-SMI error" >&2; exit 1; fi
+echo "NVIDIA GeForce RTX 4090, 595.58.03, 23028 MiB, 2944 MiB, 19579 MiB"

@@ -1,0 +1,13 @@
+FROM qwen2.5:7b-instruct
+
+#============================================================================
+# Title:            gpu-test.modelfile
+# Description:      Test modfile to explicitly configure GPU layer offloading for RTX 4090
+# Author:           Keverall
+# Date:             2026-04-28
+# Version:          1.0.0
+# Hardware:         NVIDIA GeForce RTX 4090 (24GB VRAM)
+# Parameters:       num_gpu_layers=28
+#============================================================================
+
+PARAMETER num_gpu_layers 28

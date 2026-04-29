@@ -1,0 +1,8 @@
+FROM llama3.2:1b
+
+# Test parameters that should work
+PARAMETER num_ctx 2048
+PARAMETER num_batch 512
+PARAMETER num_thread 4
+
+SYSTEM """You are a test model."""

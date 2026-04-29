@@ -1,0 +1,24 @@
+#============================================================================
+# Title:            docker-compose.yml
+# Description:      Docker Compose configuration for Qdrant vector database
+# Author:           Keverall
+# Date:             2026-04-28
+# Version:          1.0.0
+#============================================================================
+
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.0
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
+    volumes:
+      - /home/keverall/.qdrant:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__HOST=0.0.0.0
+    entrypoint: ["/qdrant/entrypoint.sh"]

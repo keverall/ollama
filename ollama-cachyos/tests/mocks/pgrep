@@ -1,0 +1,10 @@
+#!/bin/bash
+# Mock pgrep: check for process matching pattern
+MOCK_PROC="${TEST_MOCK_processes:-none}"
+if [[ "$MOCK_PROC" == "ollama_running" ]] && [[ "$*" == *"-f"* ]] && [[ "$*" == *"ollama"* ]]; then
+    exit 0  # Simulate ollama process found
+elif [[ "$1" == "-f"* ]]; then
+    exit 1  # No match
+else
+    exit 1
+fi
