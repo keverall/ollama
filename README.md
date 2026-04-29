@@ -1,55 +1,60 @@
-# Ollama DevOps Project
+# Ollama DevOps Platform
 
-A comprehensive project for managing and deploying Ollama AI models with DevOps best practices, including configuration management, automated deployment, and model lifecycle management.
+A comprehensive project for managing and deploying Ollama AI models with DevOps best practices, including configuration management, automated deployment, and model lifecycle management across multiple platforms.
 
-## Project Structure
+## Directory Structure
 
 ```text
 .
-├── logs/
-│   ├── ollama-macbook-server.log
-│   └── ollama-server.log
-└── ollama-macbook/
-    ├── README.md
-    ├── modfiles/
-    │   ├── modfile-gemma4
-    │   └── modfile-qwen-devops
-    └── scripts/
-        ├── .env              # local environment (gitignored)
-        ├── .envexample
-        ├── eod.sh
-        ├── docker-compose.yml
-        └── sod.sh
+├── ollama-devops/                   # Main unified project (see README.md inside)
+│   ├── platform/                    # Platform-specific configurations
+│   │   ├── macbook-m4-24gb-optimized/   # MacBook-specific configuration
+│   │   └── cachyos-i9-32gb-nvidia-4090/ # CachyOS-specific configuration
+│   ├── scripts/                     # Cross-platform automation scripts
+│   ├── tests/                       # Comprehensive test suite
+│   ├── docs/                        # Documentation
+│   └── README.md                    # Platform-specific documentation
+├── ollama-cachyos/                  # Legacy CachyOS directory (deprecated)
+├── ollama-macbook/                  # Legacy MacBook directory (deprecated)
+├── logs/                            # Runtime logs
 ```
 
-## Key Components
+## Migration Notice
 
-- **ollama-macbook/**: Main project directory containing scripts, modfiles, and documentation.
-- **modfiles/**: Custom Modelfiles for building optimized Ollama models.
-- **scripts/**: Automation scripts for starting/stopping models and managing Docker services.
-- **.env** (in scripts/): Local environment configuration (not committed; copy from .envexample).
-- **logs/**: Server logs for monitoring and troubleshooting.
+This repository has been restructured for better maintainability. The main project is now in `ollama-devops/` with a DRY (Don't Repeat Yourself) architecture that eliminates code duplication.
 
-## Project Features
+### For New Users
+Start here: `cd ollama-devops && cat README.md`
 
-### Configuration Management
-- Environment variables defined in `.env` (with template `.envexample`) control model selection, paths, and memory optimizations.
-- Modelfiles provide reproducible model builds with tailored parameters for the M4 Pro 24GB.
+### For Existing Users
+The legacy directories (`ollama-cachyos/` and `ollama-macbook/`) are deprecated but remain functional. Migrate to `ollama-devops/` for ongoing development and support.
 
-### Automated Model Lifecycle
-- `sod.sh`: Ensures Ollama is running, pulls/base models, builds the custom DevOps model, preloads it, and starts Qdrant.
-- `eod.sh`: Gracefully shuts down Ollama and Docker containers to free system resources.
+## Quick Start (New Structure)
 
-### Containerized Services
-- Qdrant vector database is managed with Docker Compose for local RAG/embeddings indexing.
+```bash
+cd ollama-devops
 
-### Memory Optimizations
-- Flash attention (`OLLAMA_FLASH_ATTENTION=1`) and KV cache quantization (`OLLAMA_KV_CACHE_TYPE=q4_0`) are enabled by default to fit 14B models within 24GB RAM.
+# Configure for your platform
+cp platform/macbook-m4-24gb-optimized/.env scripts/.env    # MacBook
+# OR
+cp platform/cachyos-i9-32gb-nvidia-4090/.env scripts/.env  # CachyOS
 
-### Models
-- Base models: `nomic-embed-text` (embeddings), `qwen2.5-coder:14b` (code generation).
-- Custom model: `qwen-devops` (DevOps-tuned, built from modfile-qwen-devops).
-- Optional: `gemma4-devops` (alternative custom model via modfile-gemma4).
+# Start the environment
+chmod +x scripts/*.sh
+./scripts/sod.sh
+```
 
-### Logging
-- Ollama server logs are written to `logs/ollama-macbook-server.log`.
+## Supported Platforms
+
+- **MacBook M4 Pro 24GB**: Apple Silicon optimized with unified memory management
+- **CachyOS i9-13900KS + RTX 4090**: NVIDIA GPU accelerated with high-performance optimizations
+
+## Key Features
+
+- **Cross-platform**: Single codebase supporting multiple hardware configurations
+- **Auto-detection**: Scripts automatically detect and configure for your platform
+- **Hardware optimization**: Platform-specific modfiles and configurations
+- **Comprehensive testing**: Full test suite with unit, integration, and smoke tests
+- **Containerized services**: Docker Compose for Qdrant vector database
+
+See `ollama-devops/README.md` for detailed documentation.

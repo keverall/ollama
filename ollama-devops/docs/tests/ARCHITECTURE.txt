@@ -1,0 +1,140 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ollama-cachyos Test Architecture                         │
+│                         (DevOps Test Pyramid)                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                              User/Developer
+                                      │
+                        ┌─────────────┴──────────────┐
+                        │   ./tests/run_all.sh        │
+                        │   make test-all             │
+                        └─────────────┬──────────────┘
+                                      │
+         ┌────────────────────────────┼────────────────────────────┐
+         │                            │                            │
+    ┌────▼─────┐               ┌──────▼───────┐            ┌──────▼──────┐
+    │  LINT    │               │   UNIT       │            │  SMOKE      │
+    │(5 sec)   │               │  (~30 sec)   │            │  (~1 min)   │
+    └────┬─────┘               └──────┬───────┘            └──────┬──────┘
+         │                            │                            │
+         │   ┌────────────────────────┼────────────────────────┐   │
+         │   │                        │                        │   │
+    ┌────▼─────┐           ┌─────────▼─────────┐      ┌───────▼──────┐
+    │ shellcheck│           │ test_config.bats │      │ test_basic_  │
+    │ bash -n   │           │ test_valid.bats  │      │ smoke.bats   │
+    │ security  │           │ test_ensure.bats │      └──────────────┘
+    │ line ends │           │ test_readiness   │
+    └──────────┘           │ test_warmup      │
+                            └──────────────────┘
+
+                              ┌───────┴───────┐
+                              │   (mocks)     │
+                              │ Fast, Isolated│
+                              └───────┬───────┘
+                                      │
+                              ┌───────▼───────┐
+                              │ INTEGRATION   │
+                              │   (~5 min)    │
+                              └───────┬───────┘
+                                      │
+                    ┌─────────────────┼─────────────────┐
+                    │                 │                 │
+            ┌───────▼───────┐ ┌───────▼───────┐ ┌──────▼───────┐
+            │ sod_integ.bats│ │ eod_integ.bats│ │ (more)       │
+            └───────┬───────┘ └───────┬───────┘ └──────────────┘
+                    │                 │
+                    └─────────────────┘
+                              │
+                    ┌──────────▼──────────┐
+                    │   E2E (Real HW)     │
+                    │   (~30 min)         │
+                    │   - Real ollama     │
+                    │   - Real docker     │
+                    │   - GPU + Models    │
+                    └─────────────────────┘
+
+════════════════════════════════════════════════════════════════════════════
+
+Test Execution Graph
+
+  lint ──→ shellcheck ──→ (PASS/FAIL)
+    │
+    ├─→ bash -n ──→ syntax valid?
+    │
+    ├─→ security scan ──→ eval/sudo/chmod777?
+    │
+    └─→ line endings ──→ LF?
+
+  unit ──→ isolated function tests (mocked binaries)
+    │
+    └─→ fixture files / mock responses
+
+  integration ──→ full script runs (mocked ollama/docker/nvidia)
+    │
+    └─→ validates workflow, log output, env vars
+
+  smoke ──→ fast sanity checks on real binaries
+    │
+    └─→ verifies basic health
+
+  e2e ───────────→ real hardware, full downloads
+                  │
+                  └─→ validates end-to-end correctness
+
+════════════════════════════════════════════════════════════════════════════
+
+Mock Layer Architecture
+
+  tests/mocks/
+  ├── ollama       ← substitutes real ollama binary
+  ├── docker       ← substitutes docker CLI
+  ├── docker-compose ← substitutes docker-compose
+  ├── nvidia-smi   ← substitutes GPU detection
+  └── curl         ← substitutes HTTP client
+
+  Usage:
+    export PATH="$PWD/tests/mocks:$PATH"
+    export TEST_MOCK_ollama=always-fail   # control behavior
+    ./scripts/sod.sh   ← sees mocks, not real binaries
+
+  Benefits:
+    ✓ No GPU required for unit tests
+    ✓ No Docker daemon needed
+    ✓ No 40GB model downloads
+    ✓ Deterministic & fast (<5 sec)
+    ✓ Can simulate errors easily
+
+════════════════════════════════════════════════════════════════════════════
+
+Test Data Flow
+
+  ┌────────────┐
+  │ Inputs     │ (env vars, args, system state)
+  └─────┬──────┘
+        │
+        ▼
+  ┌────────────┐      ┌──────────────┐
+  │ sod.sh     │───┬─→│ Ollama Server│
+  │ eod.sh     │   │  └──────────────┘
+  └─────┬──────┘   │
+        │          │  ┌────────────────┐
+        ├──────────┼─→│ Docker        │
+        │          │  │ (qdrant)      │
+        ▼          │  └────────────────┘
+  ┌────────────┐  │
+  │ Logs       │  │
+  │ (fs writes)│  │
+  └────────────┘  │
+        │         │
+        └─────────┼─────────────────────────────┐
+                   │                             │
+        ┌──────────▼──────────┐        ┌─────────▼────────┐
+        │ Assertions          │        │ Mock Layer      │
+        │ (bats)              │        │ (optional)      │
+        │                     │        │                 │
+        │ - Exit code 0?      │        │ - No real GPU   │
+        │ - Log file exists?  │        │ - No Docker     │
+        │ - Pattern match?    │        │ - No network    │
+        └─────────────────────┘        └─────────────────┘
+
+════════════════════════════════════════════════════════════════════════════

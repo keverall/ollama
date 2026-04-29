@@ -84,14 +84,35 @@ else
     fi
 fi
 
+# Set platform-specific modfile directory
+case "$PLATFORM" in
+    macos|macbook)
+        MODFILE_DIR="${PROJECT_ROOT}/platform/macbook-m4-24gb-optimized/modfiles"
+        ;;
+    cachyos|linux)
+        MODFILE_DIR="${PROJECT_ROOT}/platform/cachyos-i9-32gb-nvidia-4090/modfiles"
+        ;;
+    *)
+        MODFILE_DIR="${PROJECT_ROOT}/platform/modfiles"  # fallback
+        ;;
+esac
+
 #----------------------------------------------------------------------------
 # Environment Variables & Configuration
 #----------------------------------------------------------------------------
-# Load .env if it exists
-if [[ -f "${SCRIPT_DIR}/.env" ]]; then
-    # shellcheck disable=SC1091
-    source "${SCRIPT_DIR}/.env"
-fi
+# Load platform-specific .env if it exists
+PLATFORM_ENV_FILE=""
+case "$PLATFORM" in
+    macos|macbook)
+        PLATFORM_ENV_FILE="${PROJECT_ROOT}/platform/macbook-m4-24gb-optimized/.env"
+        ;;
+    cachyos|linux)
+        PLATFORM_ENV_FILE="${PROJECT_ROOT}/platform/cachyos-i9-32gb-nvidia-4090/.env"
+        ;;
+    *)
+        PLATFORM_ENV_FILE="${SCRIPT_DIR}/.env"  # fallback
+        ;;
+esac
 
 # Default configuration (can be overridden by .env or environment)
 OLLAMA_HOST="${OLLAMA_HOST:-[::]:11434}"  # IPv6+IPv4 dual stack
@@ -149,6 +170,15 @@ mkdir -p "${LOG_DIR}"
 log() {
     echo "[$TIMESTAMP] $1" | tee -a "${LOG_FILE}"
 }
+
+# Load platform-specific .env after logging is set up
+if [[ -f "$PLATFORM_ENV_FILE" ]]; then
+    log "Loading environment from: $PLATFORM_ENV_FILE"
+    # shellcheck disable=SC1091
+    source "$PLATFORM_ENV_FILE"
+else
+    log "No platform-specific .env found, using defaults"
+fi
 
 log "🚀 Starting Ollama DevOps Environment..."
 log "Platform: $PLATFORM"
@@ -352,9 +382,9 @@ ensure_model() {
     log "📥 Ensuring model $model_name..."
     
     # Try to create from modfile first if provided
-    if [[ -n "$modfile_name" && -f "${PROJECT_ROOT}/modfiles/${modfile_name}" ]]; then
+    if [[ -n "$modfile_name" && -f "${MODFILE_DIR}/${modfile_name}" ]]; then
         log "  Creating from modfile: $modfile_name"
-        if "${OLLAMA_BIN}" create "$model_name" -f "${PROJECT_ROOT}/modfiles/${modfile_name}"; then
+        if "${OLLAMA_BIN}" create "$model_name" -f "${MODFILE_DIR}/${modfile_name}"; then
             log "✅ $model_name created successfully."
             return 0
         else
@@ -388,7 +418,7 @@ get_modfile_for_model() {
                 # Try platform-specific modfile names
                 local candidates=("modfile-${DEVOPS_MODEL}" "modfile-qwen-devops" "modfile-gemma4")
                 for candidate in "${candidates[@]}"; do
-                    if [[ -f "${PROJECT_ROOT}/modfiles/${candidate}" ]]; then
+                    if [[ -f "${MODFILE_DIR}/${candidate}" ]]; then
                         echo "$candidate"
                         return 0
                     fi
@@ -399,19 +429,19 @@ get_modfile_for_model() {
             # CachyOS: GPU-optimized modfiles
             case "$model_name" in
                 qwen2.5:72b-instruct)
-                    if [[ -f "${PROJECT_ROOT}/modfiles/Qwen2.5-72B-instruct-GPU.modelfile" ]]; then
+                    if [[ -f "${MODFILE_DIR}/Qwen2.5-72B-instruct-GPU.modelfile" ]]; then
                         echo "Qwen2.5-72B-instruct-GPU.modelfile"
                         return 0
                     fi
                     ;;
                 qwen2.5:7b-instruct)
-                    if [[ -f "${PROJECT_ROOT}/modfiles/Qwen2.5-7B-instruct-GPU.modelfile" ]]; then
+                    if [[ -f "${MODFILE_DIR}/Qwen2.5-7B-instruct-GPU.modelfile" ]]; then
                         echo "Qwen2.5-7B-instruct-GPU.modelfile"
                         return 0
                     fi
                     ;;
                 nomic-embed-text:latest)
-                    if [[ -f "${PROJECT_ROOT}/modfiles/nomic-embed-text-GPU.modelfile" ]]; then
+                    if [[ -f "${MODFILE_DIR}/nomic-embed-text-GPU.modelfile" ]]; then
                         echo "nomic-embed-text-GPU.modelfile"
                         return 0
                     fi

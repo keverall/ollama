@@ -32,7 +32,7 @@ detect_platform() {
         echo "${PLATFORM_OVERRIDE}"
         return
     fi
-    
+
     local os
     os="$(uname -s | tr '[:upper:]' '[:lower:]')"
     case "$os" in
@@ -54,6 +54,35 @@ detect_platform() {
 
 PLATFORM="$(detect_platform)"
 echo "🎯 Detected platform: $PLATFORM"
+
+#----------------------------------------------------------------------------
+# Resolve Paths
+#----------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Allow PROJECT_ROOT override (useful for test harnesses)
+if [[ -n "${PROJECT_ROOT:-}" ]]; then
+    :
+else
+    if [[ "$SCRIPT_DIR" == */scripts ]]; then
+        PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    else
+        PROJECT_ROOT="$SCRIPT_DIR"
+    fi
+fi
+
+# Set platform-specific modfile directory (for consistency, even though eod.sh doesn't use modfiles)
+case "$PLATFORM" in
+    macos|macbook)
+        MODFILE_DIR="${PROJECT_ROOT}/platform/macbook-m4-24gb-optimized/modfiles"
+        ;;
+    cachyos|linux)
+        MODFILE_DIR="${PROJECT_ROOT}/platform/cachyos-i9-32gb-nvidia-4090/modfiles"
+        ;;
+    *)
+        MODFILE_DIR="${PROJECT_ROOT}/platform/modfiles"  # fallback
+        ;;
+esac
 
 #----------------------------------------------------------------------------
 # Logging Setup
