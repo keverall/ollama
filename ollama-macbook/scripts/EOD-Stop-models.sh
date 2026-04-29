@@ -14,21 +14,13 @@ else
     echo "ℹ️  No docker-compose.yml found, skipping Docker cleanup."
 fi
 
-# 2. Gracefully stop Ollama server (if running via 'ollama serve')
-if "$OLLAMA_BIN" ps > /dev/null 2>&1; then
-    echo "📡 Stopping Ollama server..."
-    # Try graceful shutdown via SIGTERM to 'ollama serve' processes
-    pkill -f "ollama serve" 2>/dev/null
-    sleep 2
-fi
-
-# 3. Force kill any remaining Ollama processes
-if pgrep -x "ollama" > /dev/null; then
-    echo "🔪 Force-killing remaining Ollama processes..."
-    killall -9 "ollama" 2>/dev/null
-fi
-
-# 4. Final cleanup of the Ollama app (macOS GUI)
+# 2. Stop Ollama server and app
+echo "📡 Stopping Ollama services..."
+# Try graceful quit of the Ollama desktop app
 osascript -e 'quit app "Ollama"' 2>/dev/null
+# Kill any ollama server processes
+killall -9 "ollama" 2>/dev/null
+# Kill the Ollama UI app if still running
+killall -9 "Ollama" 2>/dev/null
 
 echo "✅ All services stopped. VRAM cleared."

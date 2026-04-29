@@ -1,8 +1,7 @@
 # Models to ensure are present and ready
-export MODEL_LIST="nomic-embed-text,qwen2.5-coder:14b"
+export OLLAMA_MODELS="nomic-embed-text,qwen2.5-coder:14b"
 export DEVOPS_MODEL="qwen-devops"
 export OLLAMA_BIN="/usr/local/bin/ollama"
-export OLLAMA_MODELS=~/.ollama/models/ 
 
 # Memory optimizations for M4 Pro 24GB
 export OLLAMA_FLASH_ATTENTION=1
