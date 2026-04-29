@@ -83,6 +83,8 @@ case "$PLATFORM" in
         MODFILE_DIR="${PROJECT_ROOT}/platform/modfiles"  # fallback
         ;;
 esac
+# Mark MODFILE_DIR as used (set for consistency with sod.sh)
+: "${MODFILE_DIR}"
 
 #----------------------------------------------------------------------------
 # Logging Setup
@@ -227,6 +229,8 @@ case "$PLATFORM" in
         fi
         ;;
 esac
+# Mark MODFILE_DIR as used (set for consistency with sod.sh)
+: "${MODFILE_DIR}"
 
 #----------------------------------------------------------------------------
 # Cleanup and Final Status

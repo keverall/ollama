@@ -3,7 +3,7 @@
 ## In 60 Seconds
 
 ```bash
-cd ollama-cachyos
+cd ollama-devops
 
 # 1. Setup (only once)
 ./tests/setup.sh --quick
@@ -33,23 +33,22 @@ make test-all
 
 ## Live Test Example (Current Session)
 
-The sod.sh fix was validated:
+The unified scripts were validated:
 
 ```bash
-# Script started Ollama successfully
-$ ollama list
-NAME    ID    SIZE    MODIFIED
+# Platform detection works
+$ PLATFORM_OVERRIDE=macos ./scripts/sod.sh --dry-run
+🎯 Detected platform: macos
+[Loading environment from: platform/macbook-m4-24gb-optimized/.env]
+[Ensuring models from: platform/macbook-m4-24gb-optimized/modfiles/]
 
-# Server running on [::]:11434
-$ curl http://localhost:11434/api/tags
-{"version":"0.21.2", ...}
-
-# GPU detected
-$ nvidia-smi
-NVIDIA GeForce RTX 4090, 23028 MiB total
+$ PLATFORM_OVERRIDE=cachyos ./scripts/sod.sh --dry-run  
+🎯 Detected platform: cachyos
+[Loading environment from: platform/cachyos-i9-32gb-nvidia-4090/.env]
+[Ensuring models from: platform/cachyos-i9-32gb-nvidia-4090/modfiles/]
 ```
 
-✅ **Core fix confirmed working**
+✅ **Cross-platform compatibility confirmed**
 
 ---
 
@@ -105,7 +104,7 @@ DEBUG=1 bats tests/unit/test_configuration.bats
 ## CI Example (GitHub Actions)
 
 ```yaml
-name: Test
+name: Tests
 on: [push]
 jobs:
   test:
@@ -118,15 +117,38 @@ jobs:
           sudo apt-get install -y bats shellcheck
       - name: Run tests
         run: |
-          cd ollama-cachyos
+          cd ollama-devops
           ./tests/run_all.sh --all
+```
+
+---
+
+## Platform-Specific Testing
+
+### Testing MacBook Configuration
+```bash
+cd ollama-devops
+PLATFORM_OVERRIDE=macos ./tests/run_all.sh --unit
+```
+
+### Testing CachyOS Configuration
+```bash
+cd ollama-devops
+PLATFORM_OVERRIDE=cachyos ./tests/run_all.sh --unit
+```
+
+### Testing with Mock GPU (no hardware)
+```bash
+export TEST_MOCK_GPU=absent
+./tests/run_all.sh --smoke
 ```
 
 ---
 
 ## Need Help?
 
-- Full docs: `tests/README.md`
-- Test plan: `tests/TEST_PLAN.md`  
-- Architecture: `tests/ARCHITECTURE.txt`
-- Summary: `tests/IMPLEMENTATION_SUMMARY.md`
+- Full docs: `docs/tests/README.md`
+- Test plan: `docs/tests/TEST_PLAN.md`  
+- Architecture: `docs/SYSTEM_OVERVIEW.md`
+- Quick reference: `docs/API_ENDPOINTS.md`
+

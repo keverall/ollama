@@ -6,6 +6,10 @@ setup() {
     cd "$TEST_TMPDIR"
     mkdir -p logs modfiles
     export LOG_DIR="$PWD/logs"
+    # Determine actual log file created by script (will be platform-specific)
+    ACTUAL_LOG=""
+
+
 }
 
 teardown() {
@@ -15,37 +19,43 @@ teardown() {
 @test "sod.sh: Validates ollama binary exists (should succeed with mock)" {
     # Use real script, mocks are in PATH from runner
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
 }
 
 @test "sod.sh: Creates log directory" {
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
     [ -d logs ]
 }
 
 @test "sod.sh: Logs startup messages" {
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    [ -f logs/ollama-cachyos-devops.log ]
+    [ -n "$ACTUAL_LOG" ]
 }
 
 @test "sod.sh: Starts Ollama server" {
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Starting Ollama server" logs/ollama-cachyos-devops.log
+    grep -q "Starting Ollama server" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Verifies Ollama readiness" {
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Ollama is running" logs/ollama-cachyos-devops.log
+    grep -q "Ollama is running" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Checks models" {
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Checking Base Models" logs/ollama-cachyos-devops.log
+    grep -q "📦 Phase 4: Checking models" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Starts Qdrant via docker-compose" {
@@ -57,8 +67,9 @@ services:
     image: qdrant/qdrant:v1.12.0
 EOF
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Starting Qdrant" logs/ollama-cachyos-devops.log
+    grep -q "Starting Qdrant" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Final status shows success" {
@@ -70,8 +81,9 @@ services:
     image: qdrant/qdrant:v1.12.0
 EOF
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Environment Started Successfully" logs/ollama-cachyos-devops.log
+    grep -q "Environment Started Successfully" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Sets correct OLLAMA_HOST binding" {
@@ -83,6 +95,7 @@ services:
     image: qdrant/qdrant:v1.12.0
 EOF
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
     grep -q "OLLAMA_HOST=0.0.0.0:11434" logs/ollama-server.log || true
 }
@@ -97,6 +110,7 @@ services:
     image: qdrant/qdrant:v1.12.0
 EOF
     run "$PROJECT_ROOT/scripts/sod.sh"
+    ACTUAL_LOG=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Stopping existing Ollama processes" logs/ollama-cachyos-devops.log
+    grep -q "Stopping existing Ollama processes" "$ACTUAL_LOG"
 }

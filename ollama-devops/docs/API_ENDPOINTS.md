@@ -219,3 +219,7 @@ curl -X POST http://localhost:6333/collections/ollama_embeddings/points/search -
   "with_payload": true
 }'
 ```
+
+---
+**Last Updated:** 2026-04-30  
+**Version:** 1.0.0

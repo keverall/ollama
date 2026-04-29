@@ -28,7 +28,7 @@ export PATH; export PROJECT_ROOT
 mkdir -p "$TEST_DIR/logs"
 
 echo "=========================================="
-echo "  ollama-cachyos Integration Test Suite"
+echo "  ollama-devops Integration Test Suite"
 echo "=========================================="
 echo ""
 

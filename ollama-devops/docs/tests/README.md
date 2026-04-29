@@ -1,8 +1,8 @@
-# ollama-cachyos Test Suite
+# Ollama-DevOps Test Suite
 
 ## Overview
 
-This is a comprehensive, DevOps-standard test framework for the ollama-cachyos scripts. It follows the **test pyramid** approach with multiple levels of testing:
+This is a comprehensive, DevOps-standard test framework for the ollama-devops scripts. It follows the **test pyramid** approach with multiple levels of testing:
 
 ```
     E2E Tests     (few, slow, full integration)
@@ -23,7 +23,7 @@ This is a comprehensive, DevOps-standard test framework for the ollama-cachyos s
 # Fast feedback (unit + smoke + lint)
 ./tests/run_all.sh
 
-# Only unit tests
+# only unit tests
 ./tests/run_all.sh --unit
 
 # only smoke tests
@@ -166,14 +166,14 @@ Tests with mocked binaries:
 Tests on real hardware:
 - Actual Ollama server startup
 - Real model downloads (qwen2.5:7b-instruct)
-- GPU detection with nvidia-smi
+- GPU detection with nvidia-smi (CachyOS)
 - Qdrant container startup
 - Full teardown
 
 **Warning:** E2E tests download ~7GB minimum (7B model). Ensure you have:
 - Sufficient disk space (40GB+ for 72B model)
 - Stable internet connection
-- NVIDIA GPU with drivers installed
+- NVIDIA GPU with drivers installed (CachyOS)
 
 ## Test Fixtures
 
@@ -192,7 +192,7 @@ The `tests/mocks/` directory contains replacements for real binaries that:
 
 ### Using Mocks
 ```bash
-export PATH="/path/to/ollama-cachyos/tests/mocks:$PATH"
+export PATH="/path/to/ollama-devops/tests/mocks:$PATH"
 export TEST_MOCK_ollama=always-fail  # optional: control behavior
 ./scripts/sod.sh  # will use mocks
 ```
@@ -217,7 +217,8 @@ export TEST_MOCK_ollama=always-fail  # optional: control behavior
 
 ### GitHub Actions Workflow
 
-Create `.github/workflows/test.yml`:```yaml
+Create `.github/workflows/test.yml`:
+```yaml
 name: Tests
 on: [push, pull_request]
 jobs:
@@ -308,13 +309,13 @@ Coverage goals:
 
 ### 1. Run test in verbose mode
 ```bash
- bats -d tests/unit/test_configuration.bats
+bats -d tests/unit/test_configuration.bats
 ```
 
 ### 2. Set DEBUG logging
 ```bash
- DEBUG=1 bats tests/unit/test_configuration.bats
- ```
+DEBUG=1 bats tests/unit/test_configuration.bats
+```
 
 ### 3. Check test logs
 All test logs are in `tests/logs/`:
@@ -324,7 +325,7 @@ All test logs are in `tests/logs/`:
 
 ### 4. Re-run failed test in isolation
 ```bash
- bats tests/unit/test_readiness_loop.bats::test_name
+bats tests/unit/test_readiness_loop.bats::test_name
 ```
 
 ## Test Environment Variables
@@ -336,6 +337,7 @@ All test logs are in `tests/logs/`:
 | `TEST_MOCK_GPU` | Mock GPU presence | present |
 | `TEST_MOCK_curl` | Mock curl response | success |
 | `DEBUG` | Enable verbose debug logging | 0 |
+| `PLATFORM_OVERRIDE` | Override platform detection | auto |
 
 ## Common Issues
 
@@ -346,7 +348,7 @@ Install bats: `sudo apt-get install bats` or `sudo pacman -S bats`
 Install shellcheck: `sudo apt-get install shellcheck`
 
 ### "Tests fail due to permissions"
-Ensure scripts are executable: `chmod +x tests/*/run_all.sh`
+Ensure scripts are executable: `chmod +x tests/*.run_all.sh`
 
 ### "E2E tests timeout"
 E2E tests download large models. Either:
@@ -381,5 +383,5 @@ All tests must:
 ---
 
 **Maintainer:** Keverall  
-**Last Updated:** 2026-04-29  
+**Last Updated:** 2026-04-30  
 **Version:** 1.0.0

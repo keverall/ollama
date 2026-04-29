@@ -174,7 +174,7 @@ log() {
 # Load platform-specific .env after logging is set up
 if [[ -f "$PLATFORM_ENV_FILE" ]]; then
     log "Loading environment from: $PLATFORM_ENV_FILE"
-    # shellcheck disable=SC1091
+    # shellcheck disable=SC1090  # Platform .env path is dynamic
     source "$PLATFORM_ENV_FILE"
 else
     log "No platform-specific .env found, using defaults"

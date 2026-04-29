@@ -38,7 +38,11 @@ teardown() {
 @test "Smoke: Script writes main log file" {
     run ./sod.sh
     [ "$status" -eq 0 ]
-    [ -f logs/ollama-cachyos-devops.log ]
+    # Check that main log file was created (platform-specific naming)
+    # The script creates ollama-<platform>-devops.log
+    # Since we're running on the actual platform, check for any matching log
+    actual_log=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
+    [ -n "$actual_log" ]
 }
 
 @test "Smoke: Script writes server log file" {
@@ -50,7 +54,10 @@ teardown() {
 @test "Smoke: Script detects binaries correctly" {
     run ./sod.sh
     [ "$status" -eq 0 ]
-    grep -q "GPU Status:" logs/ollama-cachyos-devops.log || true
+    # Check platform-specific log for GPU status
+    local logfile
+    logfile=$(ls logs/ollama-*-devops.log 2>/dev/null | head -1)
+    [ -n "$logfile" ] && grep -q "GPU Status:" "$logfile" || true
 }
 
 @test "Smoke: Script sets environment variables" {

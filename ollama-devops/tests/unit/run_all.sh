@@ -6,7 +6,7 @@ run_test() { TEST_COUNT=$((TEST_COUNT+1)); echo -n "  [$TEST_COUNT] $1 ... "; if
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export TEST_TMPDIR="$(mktemp -d)"
 export BATSLIB_TIMEOUT_MULTIPLIER="${BATSLIB_TIMEOUT_MULTIPLIER:-2}"
-echo "=========================================="; echo "  ollama-cachyos Unit Test Suite"; echo "=========================================="; echo ""
+echo "=========================================="; echo "  ollama-devops Unit Test Suite"; echo "=========================================="; echo ""
 for test_file in $(ls "$SCRIPT_DIR/unit"/*.bats 2>/dev/null | sort); do run_test "$(basename "$test_file" .bats)" "$test_file"; done
 echo ""; echo "=========================================="; echo "  Results: $PASS_COUNT/$TEST_COUNT passed"; echo "=========================================="
 [ $FAIL_COUNT -eq 0 ] && exit 0 || exit 1

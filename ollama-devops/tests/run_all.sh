@@ -32,7 +32,7 @@ ERRORS=0
 export PROJECT_ROOT
 
 echo "=========================================="
-echo "  ollama-cachyos Full Test Suite"
+echo "  ollama-devops Full Test Suite"
 echo "=========================================="
 echo "Project root: $PROJECT_ROOT"
 echo ""

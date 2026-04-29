@@ -7,7 +7,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 ERRORS=0
 
 echo "=========================================="
-echo "  Linting ollama-cachyos Scripts"
+echo "  Linting ollama-devops Scripts"
 echo "=========================================="
 echo ""
 

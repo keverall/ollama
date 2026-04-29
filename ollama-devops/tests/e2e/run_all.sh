@@ -42,7 +42,7 @@ fi
 # Validate outputs
 echo ""
 echo "Validating outputs..."
-[ -f logs/ollama-cachyos-devops.log ] || { echo -e "${RED}✗ Main log missing${NC}"; exit 1; }
+[ -f logs/ollama-devops-devops.log ] || { echo -e "${RED}✗ Main log missing${NC}"; exit 1; }
 [ -f logs/ollama-server.log ] || { echo -e "${RED}✗ Server log missing${NC}"; exit 1; }
 echo -e "${GREEN}✓ Log files present${NC}"
 

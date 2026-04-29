@@ -1,4 +1,4 @@
-# ollama-cachyos DevOps Test Plan
+# ollama-devops DevOps Test Plan
 
 ## Test Strategy Overview
 

@@ -1,8 +1,8 @@
-# ollama-cachyos Test Framework — Summary
+# Ollama-DevOps Test Framework — Summary
 
 ## Status: ✅ COMPLETE
 
-A comprehensive, DevOps-standard test infrastructure has been built for the ollama-cachyos scripts, following the **test pyramid** methodology.
+A comprehensive, DevOps-standard test infrastructure has been built for the ollama-devops scripts, following the **test pyramid** methodology.
 
 ---
 
@@ -94,7 +94,7 @@ make test-all   # if using provided Makefile
 
 ### Use Mocks for Offline Testing
 ```bash
-export PATH="/path/to/tests/mocks:$PATH"
+export PATH="/path/to/ollama-devops/tests/mocks:$PATH"
 ./scripts/sod.sh                # uses mock binaries, fast
 ```
 
@@ -121,7 +121,7 @@ export PATH="/path/to/tests/mocks:$PATH"
 - ✅ Process cleanup (pgrep/pkill)
 - ✅ Server readiness retry loop
 - ✅ Model existence checks (grep patterns)
-- ✅ Modfile path resolution
+- ✅ Modfile path resolution (platform-specific)
 - ✅ Warmup error suppression
 - ✅ API connectivity checks
 - ✅ Docker Compose validation
@@ -141,7 +141,7 @@ export PATH="/path/to/tests/mocks:$PATH"
 ### Successful Run
 ```
 ==========================================
-  ollama-cachyos Unit Test Suite
+  ollama-devops Unit Test Suite
 ==========================================
 
   [1] test_configuration.bats ... PASS
@@ -169,7 +169,7 @@ export PATH="/path/to/tests/mocks:$PATH"
 
 ## Integration with CI/CD
 
-### Pre-Commit Hook
+### Pre-Commit Hook (local)
 ```bash
 # .git/hooks/pre-commit
 #!/bin/bash
@@ -196,7 +196,7 @@ jobs:
 ```
 
 ### Nightly (Scheduled)
-- Run full E2E on dedicated hardware
+- Full E2E suite on dedicated hardware
 - Performance benchmarks
 - Large model download tests
 - Generate coverage reports
@@ -230,6 +230,7 @@ This test framework follows **DevOps best practices**:
 ---
 
 **Framework built by:** Kilo (AI Assistant)  
-**Date:** 2026-04-29  
+**Date:** 2026-04-30  
 **Standards:** Shellcheck, BATS, Shift-Left Testing, Test Pyramid  
 **Status:** Production-ready ✅
+

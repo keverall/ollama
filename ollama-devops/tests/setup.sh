@@ -25,7 +25,7 @@ else
 fi
 
 echo "=========================================="
-echo "  ollama-cachyos Test Environment Setup"
+echo "  ollama-devops Test Environment Setup"
 echo "=========================================="
 echo ""
 
@@ -121,9 +121,9 @@ fi
 
 echo ""
 echo "Quick start:"
-echo "  1. Run lint:   .ollama-cachyos/tests/run_all.sh --lint"
-echo "  2. Run unit:   .ollama-cachyos/tests/run_all.sh --unit"
-echo "  3. Run all:    .ollama-cachyos/tests/run_all.sh"
+echo "  1. Run lint:   .ollama-devops/tests/run_all.sh --lint"
+echo "  2. Run unit:   .ollama-devops/tests/run_all.sh --unit"
+echo "  3. Run all:    .ollama-devops/tests/run_all.sh"
 echo ""
 echo "For E2E tests (full hardware), run separately:"
 echo "  ./tests/e2e/run_all.sh"

@@ -1,8 +1,8 @@
-# ollama-cachyos Test Infrastructure — Implementation Summary
+# ollama-devops Test Infrastructure — Implementation Summary
 
 ## 🎯 What Was Built
 
-A complete, production-grade testing framework following DevOps best practices has been created for the ollama-cachyos scripts (`sod.sh` and `eod.sh`).
+A complete, production-grade testing framework following DevOps best practices has been created for the ollama-devops scripts (`sod.sh` and `eod.sh`).
 
 **Test Pyramid Implemented:**
 ```
@@ -22,7 +22,7 @@ A complete, production-grade testing framework following DevOps best practices h
 ## 📁 Directory Structure
 
 ```
-ollama-cachyos/
+ollama-devops/
 ├── scripts/
 │   ├── sod.sh      (fixed: startup issues resolved)
 │   └── eod.sh
@@ -83,7 +83,7 @@ ollama-cachyos/
 
 **Usage:**
 ```bash
-cd ollama-cachyos
+cd ollama-devops
 ./tests/run_all.sh --all      # Full suite
 ./tests/run_all.sh           # Default: unit+smoke+lint
 ./tests/run_all.sh --unit    # Only unit tests
@@ -254,7 +254,7 @@ Provides drop-in replacements for external dependencies, enabling:
 
 **Usage:**
 ```bash
-export PATH="/path/to/ollama-cachyos/tests/mocks:$PATH"
+export PATH="/path/to/ollama-devops/tests/mocks:$PATH"
 export TEST_MOCK_ollama=always-fail  # optional: simulate failures
 export TEST_MOCK_GPU=absent           # optional: no GPU
 ./scripts/sod.sh                      # will use mocks
@@ -340,7 +340,7 @@ make clean         # Remove test artifacts
 
 ### 1. Setup Environment (once)
 ```bash
-cd ollama-cachyos
+cd ollama-devops
 ./tests/setup.sh --quick
 ```
 
