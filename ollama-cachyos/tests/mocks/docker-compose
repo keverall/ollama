@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Mock docker-compose: $*"
-exit 0

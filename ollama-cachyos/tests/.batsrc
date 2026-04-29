@@ -1,3 +1,0 @@
-# BATS configuration
-load test_utils/common.sh
-export BATSLIB_TIMEOUT_MULTIPLIER="${BATSLIB_TIMEOUT_MULTIPLIER:-2}"

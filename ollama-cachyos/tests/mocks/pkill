@@ -1,8 +1,0 @@
-#!/bin/bash
-# Mock pkill: kill processes matching pattern
-MOCK_PROC="${TEST_MOCK_processes:-none}"
-if [[ "$MOCK_PROC" == "ollama_running" ]] && [[ "$*" == *"-f"* ]] && [[ "$*" == *"ollama"* ]]; then
-    exit 0  # Simulate kill success
-else
-    exit 0  # No processes to kill, still success
-fi

@@ -1,3 +1,0 @@
-#!/bin/bash
-MOCK_MODE="${TEST_MOCK_curl:-success}"
-[ "$MOCK_MODE" = "success" ] && echo '{"version":"0.21.2"}' && exit 0 || exit 1
