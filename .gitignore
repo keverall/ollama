@@ -7,6 +7,8 @@
 # VSCode settings
 .vscode/
 
+logs/
+
 # Bash shell configuration
 .bashrc
 .bash_profile
