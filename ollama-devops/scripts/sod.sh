@@ -117,6 +117,10 @@ fi
 OLLAMA_HOST="${OLLAMA_HOST:-[::]:11434}"
 OLLAMA_PORT="${OLLAMA_PORT:-11434}"
 OLLAMA_BASE_URL="http://localhost:${OLLAMA_PORT}"
+[ -z "${DEFAULT_MODELS:-}" ] && DEFAULT_MODELS=""
+[ -z "${OLLAMA_NUM_PARALLEL:-}" ] && OLLAMA_NUM_PARALLEL="24"
+\[ -z "${OLLAMA_MAX_LOADED_MODELS:-}" ] && OLLAMA_MAX_LOADED_MODELS="2"
+\[ -z "${QDRANT_PORT:-}" ] && QDRANT_PORT="6333"
 
 # Resolve OLLAMA_BIN to absolute path if possible
 OLLAMA_BIN="${OLLAMA_BIN:-ollama}"

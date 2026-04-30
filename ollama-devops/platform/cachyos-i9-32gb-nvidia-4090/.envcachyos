@@ -1,0 +1,27 @@
+# Ollama Environment Configuration for CachyOS RTX 4090
+# Copy from .envexample and customize for your system
+
+# CachyOS settings
+OLLAMA_BIN="ollama"
+OLLAMA_HOST="[::]:11434"
+OLLAMA_PORT="11434"
+
+# Platform-specific defaults (scripts will override based on detection)
+OLLAMA_NUM_PARALLEL="24"
+OLLAMA_MAX_LOADED_MODELS="2"
+
+# CachyOS NVIDIA GPU optimizations
+OLLAMA_GPU_LAYERS="50"
+OLLAMA_MAX_LOADED_MODELS="2"
+
+# Model configuration for CachyOS RTX 4090
+# qwen2.5-coder:32b-gpu = custom GPU-optimized variant built from qwen2.5-coder:32b base
+DEFAULT_MODELS="qwen2.5-coder:32b-gpu,qwen2.5:7b-instruct,nomic-embed-text:latest"
+DEVOPS_MODEL=""
+
+# Store Ollama models on home partition (plenty of space)
+OLLAMA_MODELS="/home/ollama/models"
+
+# Qdrant
+QDRANT_PORT="6333"
+QDRANT_GRPC_PORT="6334"

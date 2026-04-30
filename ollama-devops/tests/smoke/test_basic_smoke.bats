@@ -6,6 +6,7 @@ setup() {
     cd "$TEST_TMPDIR"
     mkdir -p logs modfiles
     cp "$PROJECT_ROOT/scripts/sod.sh" .
+    cp "$PROJECT_ROOT/scripts/lib_logging.sh" .
     chmod +x sod.sh
     # Unset PROJECT_ROOT so script auto-detects based on location
     unset PROJECT_ROOT
