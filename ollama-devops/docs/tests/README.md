@@ -15,6 +15,7 @@ This is a comprehensive, DevOps-standard test framework for the ollama-devops sc
 
 ### Run All Tests (recommended for CI)
 ```bash
+cd ollama-devops
 ./tests/run_all.sh --all
 ```
 
@@ -43,44 +44,48 @@ This is a comprehensive, DevOps-standard test framework for the ollama-devops sc
 
 ```
 tests/
-├── unit/                    # Unit tests - isolated, fast
-│   ├── run_all.sh          # Unit test runner
-│   ├── test_configuration.bats   # Variable defaults & overrides
-│   ├── test_validation.bats      # Binary dep detection
-│   ├── test_ensure_model.bats    # Model existence logic
-│   ├── test_readiness_loop.bats  # Startup retry logic
-│   └── test_warmup.bats          # Model warmup logic
-│
-├── integration/             # Integration tests - with mocks
+├── .batsrc                    # Bats configuration
+├── .env.example               # Test environment template
+├── README.md                  # This file
+├── TEST_PLAN.md               # Detailed test plan
+├── TEST_SUMMARY.md            # Quick reference
+├── IMPLEMENTATION_SUMMARY.md  # Implementation details
+├── ARCHITECTURE.txt           # Architecture diagrams
+├── run_all.sh                 # Master test runner
+├── run_lint.sh                # Static analysis
+├── run_coverage.sh            # Coverage reports
+├── setup.sh                   # Environment setup wizard
+├── unit/                      # Unit tests (~30s)
 │   ├── run_all.sh
-│   ├── test_sod_integration.bats   # Full sod.sh flow
-│   └── test_eod_integration.bats   # Full eod.sh flow
-│
-├── smoke/                   # Smoke tests - basic health
+│   ├── test_configuration.bats
+│   ├── test_validation.bats
+│   ├── test_ensure_model.bats
+│   ├── test_readiness_loop.bats
+│   └── test_warmup.bats
+├── integration/               # Integration tests (~5 min)
 │   ├── run_all.sh
-│   └── test_basic_smoke.bats       # Script starts? Logs created?
-│
-├── e2e/                     # End-to-end - real hardware
+│   ├── test_sod_integration.bats
+│   └── test_eod_integration.bats
+├── smoke/                     # Smoke tests (~1 min)
 │   ├── run_all.sh
-│   └── test_full_workflow.bats     # Actual model downloads
-│
-├── fixtures/                # Test data
+│   └── test_basic_smoke.bats
+├── e2e/                       # End-to-end (~30 min)
+│   ├── run_all.sh
+│   └── test_full_workflow.bats
+├── fixtures/                  # Static test data
 │   ├── nvidia-smi-output.csv
 │   └── model-list-sample.txt
-│
-├── mocks/                   # Mock binaries for offline tests
-│   ├── install.sh          # Install mocks to PATH
-│   ├── ollama              # Mock ollama binary
-│   ├── docker-compose      # Mock docker-compose
-│   ├── docker              # Mock docker
-│   ├── nvidia-smi          # Mock nvidia-smi
-│   └── curl                # Mock curl
-│
-├── run_lint.sh             # Static analysis (shellcheck, etc)
-├── test_utils/             # Shared test utilities
-│   └── common.sh           # Assertion helpers
-│
-└── TEST_PLAN.md           # Detailed test plan document
+├── mocks/                     # Mock binaries (offline testing)
+│   ├── install.sh
+│   ├── ollama
+│   ├── docker-compose
+│   ├── docker
+│   ├── nvidia-smi
+│   ├── curl
+│   ├── pgrep
+│   └── pkill
+└── test_utils/                # Shared test utilities
+    └── common.sh              # Assertion helpers
 ```
 
 ## Prerequisites
@@ -105,7 +110,6 @@ sudo pacman -S --needed bats shellcheck
 ```bash
 cd tests/mocks
 ./install.sh
-# This adds mock binaries to tests/mocks directory
 # Use by: export PATH="$PWD:$PATH"
 ```
 
@@ -118,7 +122,7 @@ cd tests/mocks
 ./tests/run_lint.sh
 ```
 Checks:
-- Shellcheck compliance (zero warnings)
+- Shellcheck compliance (zero warnings target)
 - Bash syntax validity
 - Hardcoded paths
 - Security issues
@@ -160,18 +164,16 @@ Tests with mocked binaries:
 ### 5. E2E Tests (~15-30 minutes)
 ```bash
 ./tests/run_all.sh --all
-# or
-./tests/run_all.sh --e2e   # if implemented
 ```
 Tests on real hardware:
 - Actual Ollama server startup
-- Real model downloads (qwen2.5:7b-instruct)
+- Real model downloads
 - GPU detection with nvidia-smi (CachyOS)
 - Qdrant container startup
 - Full teardown
 
-**Warning:** E2E tests download ~7GB minimum (7B model). Ensure you have:
-- Sufficient disk space (40GB+ for 72B model)
+**Warning:** E2E tests download models. Ensure you have:
+- Sufficient disk space
 - Stable internet connection
 - NVIDIA GPU with drivers installed (CachyOS)
 
@@ -238,7 +240,7 @@ jobs:
 
 ### Pre-Commit Hook
 
-Add to `.git/hooks/pre-commit` (or use pre-commit framework):
+Add to `.git/hooks/pre-commit`:
 ```bash
 #!/bin/bash
 ./tests/run_all.sh --lint --unit
@@ -254,7 +256,6 @@ Add to `.git/hooks/pre-commit` (or use pre-commit framework):
 setup() {
     TEST_TMPDIR="$(mktemp -d)"
     cd "$TEST_TMPDIR"
-    # Set up test environment
 }
 
 teardown() {
@@ -262,9 +263,9 @@ teardown() {
 }
 
 @test "Description of test case" {
-    # Arrange: set up inputs
-    # Act: run command or function
-    # Assert: check output/exit code
+    # Arrange
+    # Act
+    # Assert
     [ expected condition ]
 }
 ```
@@ -277,7 +278,7 @@ teardown() {
 setup() {
     TEST_TMPDIR="$(mktemp -d)"
     cd "$TEST_TMPDIR"
-    PATH="$(pwd)/../mocks:$PATH"  # Use mocks
+    PATH="$(pwd)/../mocks:$PATH"
     export PATH
     cp /path/to/real/script.sh .
 }
@@ -348,7 +349,7 @@ Install bats: `sudo apt-get install bats` or `sudo pacman -S bats`
 Install shellcheck: `sudo apt-get install shellcheck`
 
 ### "Tests fail due to permissions"
-Ensure scripts are executable: `chmod +x tests/*.run_all.sh`
+Ensure scripts are executable: `chmod +x tests/*.sh tests/*/run_all.sh`
 
 ### "E2E tests timeout"
 E2E tests download large models. Either:

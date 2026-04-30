@@ -1,9 +1,10 @@
 #============================================================================
 # Title:            ollama.service
-# Description:      Systemd service for Ollama Language Model Server with GPU optimizations
+# Description:      Systemd service for Ollama Language Model Server
+#                   Managed by sod.sh/eod.sh scripts with platform-aware config
 # Author:           Keverall
-# Date:             2026-04-28
-# Version:          1.0.0
+# Date:             2026-04-30
+# Version:          2.0.0
 # Documentation:    https://github.com/ollama/ollama
 #============================================================================
 
@@ -16,30 +17,40 @@ Wants=network-online.target
 Type=simple
 User=ollama
 Group=ollama
-# Set environment variables for optimization
+
+# Platform-aware configuration loaded via EnvironmentFile
+# Default values provided; scripts override per-platform in /etc/default/ollama
+EnvironmentFile=-/etc/default/ollama
+EnvironmentFile=-/etc/sysconfig/ollama
+
+# Core settings (fallbacks if env files missing)
 Environment=OLLAMA_HOST=::
 Environment=OLLAMA_PORT=11434
-Environment=OLLAMA_NUM_PARALLEL=24
-Environment=OLLAMA_MAX_LOADED_MODELS=2
-# Optional: Set nice level for CPU priority (lower numbers = higher priority)
-# Nice=10
-# Optional: Set I/O scheduling class and priority
-# IoniceClass=2
-# IonicePriority=3
-ExecStart=/usr/local/bin/ollama serve
-ExecStop=/usr/bin/pkill -f "ollama serve"
-Restart=always
+Environment=OLLAMA_NUM_PARALLEL=4
+Environment=OLLAMA_MAX_LOADED_MODELS=1
+
+# Conditional restart policy (not always-on; controlled by sod/eod scripts)
+# Restart on failure OR when manually restarted via systemctl
+Restart=ondemand
 RestartSec=5
-# Limit memory usage (adjust based on your needs)
-# MemoryLimit=20G
-# Give the service access to GPU devices
-DeviceAllow=/dev/nvidia0 rw
-DeviceAllow=/dev/nvidiactl rw
-DeviceAllow=/dev/nvidia-uvm rw
-DeviceAllow=/dev/nvidia-uvm-tools rw
-# Standard output and error
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Executable and arguments
+ExecStart=/usr/local/bin/ollama serve
+ExecStop=/bin/kill -TERM $MAINPID
+
+# GPU device access - only active if OLLAMA_GPU_LAYERS is set > 0
+# Platform-specific drop-in files can add DeviceAllow directives
+# See: /etc/systemd/system/ollama.service.d/platform.conf
+
+# Standard output and error (configurable)
 StandardOutput=journal
 StandardError=journal
+
+# Systemd hardening defaults (adjust for GPU memory needs)
+# MemoryLimit=20G
+# NoNewPrivileges=no  # Required for NVIDIA driver access
 
 [Install]
 WantedBy=multi-user.target

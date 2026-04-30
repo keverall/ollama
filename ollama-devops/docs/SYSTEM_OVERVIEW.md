@@ -90,7 +90,7 @@ This document provides an overview of the Ollama optimized environment architect
 
 ### System Services
 
-- **Ollama Service**: Managed by systemd (Linux) or manual process (macOS)
+- **Ollama Service**: Managed by systemd on Linux, direct process on macOS
 - **Qdrant Service**: Docker Compose managed service for vector database
 
 ### Storage
@@ -100,8 +100,10 @@ This document provides an overview of the Ollama optimized environment architect
 
 ### Control & Monitoring
 
-- **Control Scripts**: Unified `sod.sh` and `eod.sh` scripts with platform auto-detection
-- **Logs**: Application and system logs in `./logs` directory
+- **Control Scripts**: Unified `sod.sh` and `eod.sh` with platform auto-detection
+  - Linux: configure systemd, then start/stop via `systemctl`
+  - macOS: direct process management
+- **Logs**: Application logs in `./logs`, systemd journal for Linux service
 
 ## Platform Architecture Differences
 
@@ -125,9 +127,10 @@ Scripts load platform-specific `.env` files:
 - `modfile-qwen-devops` → builds `qwen-devops` custom model
 
 **CachyOS** loads from `platform/cachyos-i9-32gb-nvidia-4090/modfiles/`:
-- `Qwen2.5-72B-instruct-GPU.modelfile` → `qwen2.5:72b-instruct`
+- `qwen2.5-coder:32b-gpu.modelfile` → `qwen2.5-coder:32b-gpu`
 - `Qwen2.5-7B-instruct-GPU.modelfile` → `qwen2.5:7b-instruct`
 - `nomic-embed-text-GPU.modelfile` → `nomic-embed-text:latest`
+- `snowflake-arctic-embed.modelfile` → `snowflake-arctic-embed`
 
 ## Data Flow
 
@@ -177,6 +180,9 @@ Key environment variables used throughout the system:
 - `OLLAMA_KV_CACHE_TYPE`: MacBook memory optimization (default: `q4_0`)
 - `OLLAMA_GPU_LAYERS`: CachyOS GPU offloading (default: `50`)
 
+**Storage Configuration:**
+- `OLLAMA_MODELS`: Custom model storage path (CachyOS: `/home/ollama/models`)
+
 **Model Configuration:**
 - `DEFAULT_MODELS`: Comma-separated model list (platform-specific defaults)
 - `DEVOPS_MODEL`: Custom DevOps model name (MacBook only)
@@ -213,13 +219,15 @@ Key environment variables used throughout the system:
 
 The unified scripts (`sod.sh`, `eod.sh`) abstract away platform differences:
 
-| Feature | MacBook M4 Pro | CachyOS RTX 4090 |
-|---------|----------------|------------------|
-| **Ollama control** | Process kill | systemctl + pkill |
-| **GPU acceleration** | Metal via Ollama | CUDA via NVIDIA drivers |
-- **Modfiles** | Custom modfile-qwen-devops | GPU-optimized modfiles |
-| **Memory tuning** | Flash attention, KV cache | GPU layers offloading |
-- **Platform detection** | Automatic (Darwin) | Automatic (CachyOS/Arch) |
+| Feature                | MacBook M4 Pro                | CachyOS RTX 4090                 |
+|------------------------|-------------------------------|----------------------------------|
+| **Ollama control**     | Direct process (`ollama &`)   | systemd service (`systemctl`)    |
+| **GPU acceleration**   | Metal via Ollama              | CUDA via NVIDIA drivers          |
+| **Modfiles**           | Custom `modfile-qwen-devops`  | GPU-optimized modfiles           |
+| **Memory tuning**      | Flash attention, KV cache     | GPU layers offloading            |
+| **Service type**       | No system-level service       | systemd-managed, auto-restart    |
+| **Logs**               | File-based (`logs/`)          | journald + file logs             |
+| **Platform detection** | Automatic (Darwin)            | Automatic (CachyOS/Arch)         |
 
 ## Future Extensibility
 
@@ -230,5 +238,6 @@ The `platform/` directory structure allows easy addition of new platforms:
 4. Document in platform comparison matrix
 
 ---
+
 **Last Updated:** 2026-04-30  
-**Version:** 1.0.0
+**Version:** 2.0.0

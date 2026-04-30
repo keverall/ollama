@@ -39,7 +39,7 @@ teardown() {
     run ./sod.sh
     [ "$status" -eq 0 ]
     # Check that main log file was created
-    actual_log=$(ls logs/sod.sh*.log 2>/dev/null | head -1)
+    actual_log=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
     [ -n "$actual_log" ]
 }
 
@@ -54,7 +54,7 @@ teardown() {
     [ "$status" -eq 0 ]
     # Check log for GPU status
     local logfile
-    logfile=$(ls logs/sod.sh*.log 2>/dev/null | head -1)
+    logfile=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
     [ -n "$logfile" ] && grep -q "GPU Status:" "$logfile" || true
 }
 

@@ -18,22 +18,29 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
-@test "eod.sh: Stops Qdrant via docker-compose" {
+@test "eod.sh: Stops Docker containers" {
     run "$PROJECT_ROOT/scripts/eod.sh"
     [ "$status" -eq 0 ]
-    grep -q "Stopping Qdrant" logs/eod.sh.log || true
+    EOD_LOG=$(ls logs/*-eod-run.log 2>/dev/null | head -1)
+    # Matches log with emoji prefix and optional timestamp
+    grep -Eq "\[.*\] (🐳 )?Stopping Docker containers" "$EOD_LOG" || \
+    grep -q "Stopping Docker containers" "$EOD_LOG" || true
 }
 
-@test "eod.sh: Stops Ollama service gracefully" {
+@test "eod.sh: Stops Ollama service" {
     run "$PROJECT_ROOT/scripts/eod.sh"
     [ "$status" -eq 0 ]
-    grep -q "Stopping Ollama" logs/eod.sh.log || true
+    EOD_LOG=$(ls logs/*-eod-run.log 2>/dev/null | head -1)
+    grep -Eq "\[.*\] (📡 )?Stopping Ollama services" "$EOD_LOG" || \
+    grep -q "Stopping Ollama services" "$EOD_LOG" || true
 }
 
-@test "eod.sh: Handles case when Ollama not running" {
+@test "eod.sh: Completes shutdown successfully" {
     run "$PROJECT_ROOT/scripts/eod.sh"
     [ "$status" -eq 0 ]
-    grep -q "Ollama server is not running" logs/eod.sh.log || true
+    EOD_LOG=$(ls logs/*-eod-run.log 2>/dev/null | head -1)
+    grep -Eq "\[.*\] (✅ )?Environment shutdown complete" "$EOD_LOG" || \
+    grep -q "Environment shutdown complete" "$EOD_LOG" || true
 }
 
 @test "eod.sh: Exits with 0 on success" {

@@ -1,0 +1,25 @@
+FROM qwen2.5-coder:32b
+
+#============================================================================
+# Title:            Qwen2.5-Coder-32B-GPU.modelfile
+# Description:      Hardware-optimized modfile for Qwen2.5 Coder 32B model on RTX 4090 (all layers on GPU)
+# Author:           Keverall
+# Date:             2026-04-30
+# Version:          1.0.0
+# Hardware:         NVIDIA GeForce RTX 4090 (24GB VRAM)
+# Parameters:       num_batch=512, num_thread=24, num_ctx=32768, num_gpu=999
+#============================================================================
+
+PARAMETER num_batch 512
+PARAMETER num_thread 24
+PARAMETER num_ctx 32768
+PARAMETER num_gpu 999
+
+# System configuration
+SYSTEM """You are Qwen Coder, created by Alibaba Cloud. You are a large language model optimized for RTX 4090 GPU acceleration.
+You have access to 24GB VRAM with all layers running on GPU for maximum inference speed.
+Specialize in DevOps, Terraform, IaC, cloud infrastructure, Kubernetes, Python, Go, and TypeScript.
+Provide accurate, helpful, and concise responses."""
+
+# This creates a customized model named "qwen2.5-coder:32b-gpu"
+# The base model "qwen2.5-coder:32b" will be pulled from the registry automatically.

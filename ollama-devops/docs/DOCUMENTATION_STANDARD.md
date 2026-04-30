@@ -30,7 +30,7 @@ Additionally:
 ### Cross-Platform Script Requirements
 
 When writing scripts that support multiple platforms:
-1. Detect platform early using `detect_platform()` function
+1. Detect platform early using `detect_platform()` from `lib_logging.sh`
 2. Set platform-specific paths and configuration based on detection
 3. Use `MODFILE_DIR` variable to reference platform modfiles
 4. Load platform-specific `.env` from `platform/<platform>/.env`
@@ -67,7 +67,7 @@ Modfile location: `platform/<platform>/modfiles/`
 Environment files should:
 - Include comprehensive comments explaining each variable
 - Provide platform-appropriate defaults
-- Reference the `.envexample` template
+- Reference the `.envexample` template when creating new ones
 - Be gitignored (only `.envexample` is committed)
 
 Example structure:
@@ -176,33 +176,79 @@ ollama-devops/
 ├── scripts/                          # Unified cross-platform scripts
 │   ├── sod.sh                       # Start of Day script
 │   ├── eod.sh                       # End of Day script
+│   ├── lib_logging.sh               # Shared logging library
+│   ├── setup_passwordless_sudo.sh   # Sudo configuration helper
 │   └── .envexample                  # Configuration template
 ├── platform/                         # Platform-specific configurations
 │   ├── macbook-m4-24gb-optimized/
 │   │   ├── modfiles/                 # MacBook-specific modfiles
+│   │   │   ├── modfile-gemma4
+│   │   │   └── modfile-qwen-devops
 │   │   └── .env                      # MacBook-specific config
 │   └── cachyos-i9-32gb-nvidia-4090/
 │       ├── modfiles/                 # CachyOS-specific modfiles
+│       │   ├── qwen2.5-coder:32b-gpu.modelfile
+│       │   ├── Qwen2.5-7B-instruct-GPU.modelfile
+│       │   ├── nomic-embed-text-GPU.modelfile
+│       │   └── snowflake-arctic-embed.modfile
 │       └── .env                      # CachyOS-specific config
+├── systemd/                          # systemd service files (Linux)
+│   ├── ollama.service               # main service unit
+│   ├── platform-overrides/          # drop-in configs
+│   │   └── cachyos-nvidia.conf
+│   └── README.md
 ├── docs/                             # Documentation
 │   ├── SYSTEM_OVERVIEW.md
 │   ├── API_ENDPOINTS.md
+│   ├── SYSTEMD_INTEGRATION.md
+│   ├── MIGRATION_SYSTEMD.md
 │   ├── DOCUMENTATION_STANDARD.md
 │   └── tests/
 │       ├── README.md
 │       ├── QUICKSTART.md
-│       └── TEST_PLAN.md
+│       ├── TEST_PLAN.md
+│       ├── TEST_SUMMARY.md
+│       ├── IMPLEMENTATION_SUMMARY.md
+│       └── ARCHITECTURE.txt
 ├── tests/                            # Test suites
-│   ├── unit/
-│   ├── integration/
-│   ├── smoke/
-│   ├── e2e/
-│   ├── mocks/
-│   └── run_all.sh
-├── systemd/                          # systemd service files (Linux)
-├── docker-compose.yml               # Qdrant deployment
-├── Makefile                         # Build automation
-└── logs/                            # Runtime logs (gitignored)
+│   ├── unit/                         # Unit tests
+│   │   ├── run_all.sh
+│   │   ├── test_configuration.bats
+│   │   ├── test_validation.bats
+│   │   ├── test_ensure_model.bats
+│   │   ├── test_readiness_loop.bats
+│   │   └── test_warmup.bats
+│   ├── integration/                  # Integration tests
+│   │   ├── run_all.sh
+│   │   ├── test_sod_integration.bats
+│   │   └── test_eod_integration.bats
+│   ├── smoke/                        # Smoke tests
+│   │   ├── run_all.sh
+│   │   └── test_basic_smoke.bats
+│   ├── e2e/                          # End-to-end tests
+│   │   ├── run_all.sh
+│   │   └── test_full_workflow.bats
+│   ├── fixtures/                     # Test data
+│   │   ├── nvidia-smi-output.csv
+│   │   └── model-list-sample.txt
+│   ├── mocks/                        # Mock binaries
+│   │   ├── install.sh
+│   │   ├── ollama
+│   │   ├── docker-compose
+│   │   ├── docker
+│   │   ├── nvidia-smi
+│   │   ├── curl
+│   │   ├── pgrep
+│   │   └── pkill
+│   ├── test_utils/                   # Shared utilities
+│   │   └── common.sh
+│   ├── run_all.sh                    # Master runner
+│   ├── run_lint.sh                   # Linting
+│   ├── run_coverage.sh               # Coverage
+│   └── setup.sh                      # Setup wizard
+├── docker-compose.yml                # Qdrant deployment
+├── Makefile                          # Build automation
+└── logs/                             # Runtime logs (gitignored)
 ```
 
 ## General Guidelines
@@ -218,11 +264,12 @@ ollama-devops/
 ## File Naming Conventions
 
 - **Shell scripts**: lowercase with underscores (`sod.sh`, `eod.sh`, `run_all.sh`)
-- **Modfiles**: Match model name with platform suffix (`Qwen2.5-72B-instruct-GPU.modelfile`)
+- **Modfiles**: Match model name with platform suffix (`qwen2.5-coder:32b-gpu.modelfile`)
 - **Configuration**: `.env` for local, `.envexample` for template
 - **Tests**: `test_<feature>.bats` for Bats test files
 - **Documentation**: SCREAMING_SNAKE_CASE for filenames (`SYSTEM_OVERVIEW.md`)
 
 ---
+
 **Last Updated:** 2026-04-30  
-**Version:** 1.0.0  
+**Version:** 1.0.0

@@ -4,16 +4,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 SCRIPTS_DIR="$SCRIPT_DIR/scripts"
-LOG_DIR="${PROJECT_ROOT}/logs"
-SCRIPT_NAME="$(basename "$0")"
-LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}.log"
-mkdir -p "${LOG_DIR}"
-TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-log() {
-    local msg="[$TIMESTAMP] $1"
-    echo "$msg" | tee -a "${LOG_FILE}"
-}
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+# shellcheck disable=SC2034
+LOG_DIR="${PROJECT_ROOT}/logs"  # Used by lib_logging.sh sourced below
+
+# Initialize shared logging
+# shellcheck disable=SC1091
+source "${PROJECT_ROOT}/scripts/lib_logging.sh"
+log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
+
+if [ -t 1 ]; then
+    RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+else
+    RED=''; GREEN=''; YELLOW=''; NC=''
+fi
 ERRORS=0
 
 log "=========================================="

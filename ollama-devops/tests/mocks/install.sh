@@ -1,7 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 MOCK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "Installing mock binaries from $MOCK_DIR..."
+
+# Simple logger
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log "Installing mock binaries from $MOCK_DIR..."
 
 cat > "$MOCK_DIR/ollama" <<'OLLAMA'
 #!/bin/bash
@@ -73,4 +79,4 @@ fi
 PKL
 
 for f in ollama docker-compose docker nvidia-smi curl pgrep pkill; do chmod +x "$MOCK_DIR/$f"; done
-echo "✅ Mocks installed to $MOCK_DIR"
+log "✅ Mocks installed to $MOCK_DIR"

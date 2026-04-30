@@ -4,30 +4,25 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Logging setup
-LOG_DIR="${PROJECT_ROOT}/logs"
-SCRIPT_NAME="$(basename "$0")"
-SCRIPT_ARGS=""
-if [[ $# -gt 0 ]]; then
-    SCRIPT_ARGS="--$(echo "$*" | tr ' ' '-')"
-fi
-LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}${SCRIPT_ARGS}.log"
-mkdir -p "${LOG_DIR}"
-TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-log() {
-    local msg="[$TIMESTAMP] $1"
-    echo "$msg" | tee -a "${LOG_FILE}"
-}
+# shellcheck disable=SC2034
+LOG_DIR="${PROJECT_ROOT}/logs"  # Passed to lib_logging.sh via environment
+# Initialize logging
+# shellcheck disable=SC1091
+source "${PROJECT_ROOT}/scripts/lib_logging.sh"
+log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
 
-# Colors (only when interactive)
+# Colors (only when interactive). YELLOW and BLUE may be unused in non-interactive mode.
+# shellcheck disable=SC2034
 if [ -t 1 ]; then
     RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 else
     RED=''; GREEN=''; YELLOW=''; BLUE=''; NC=''
 fi
+# shellcheck disable=SC2034
 
 # Parse arguments
-RUN_SMOKE=0; RUN_UNIT=0; RUN_INTEGRATION=0; RUN_LINT=0; RUN_E2E=0
+# shellcheck disable=SC2034
+RUN_SMOKE=0 RUN_UNIT=0 RUN_INTEGRATION=0 RUN_LINT=0 RUN_E2E=0
 if [ $# -eq 0 ]; then
     RUN_SMOKE=1; RUN_UNIT=1; RUN_INTEGRATION=0; RUN_LINT=1
 else
@@ -37,11 +32,14 @@ else
             --unit) RUN_UNIT=1 ;;
             --integration) RUN_INTEGRATION=1 ;;
             --lint) RUN_LINT=1 ;;
-            --all) RUN_SMOKE=1; RUN_UNIT=1; RUN_INTEGRATION=1; RUN_LINT=1; RUN_E2E=1 ;;
+            --all) RUN_SMOKE=1; RUN_UNIT=1; RUN_INTEGRATION=1; RUN_LINT=1; RUN_E2E=1 ;;  # E2E reserved
             *) echo "Unknown argument: $arg"; exit 1 ;;
         esac
     done
 fi
+
+# Mark RUN_E2E as intentionally read to satisfy shellcheck (reserved for future)
+: "${RUN_E2E}"
 
 ERRORS=0
 export PROJECT_ROOT

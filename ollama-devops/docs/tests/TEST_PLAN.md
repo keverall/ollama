@@ -45,6 +45,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 ## Test Categories
 
 ### A. Functional Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | FT-01 | Environment variable defaults | Unit | Verify correct OLLAMA_HOST, PORT, etc |
@@ -59,6 +60,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | FT-10 | Qdrant docker-compose validation | Unit | docker-compose.yml existence check |
 
 ### B. Error Handling Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | EH-01 | Missing ollama binary | Unit | Exit code 1, clear error message |
@@ -72,6 +74,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | EH-09 | Log directory unwritable | Unit | Exit code 1, clear error |
 
 ### C. Security Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | SEC-01 | No hardcoded secrets | Unit | Static analysis of script |
@@ -81,6 +84,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | SEC-05 | Environment variable injection | Unit | Validate variable expansion safety |
 
 ### D. Performance Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | PF-01 | Startup time < 60s | Smoke | Time from launch to ready |
@@ -90,6 +94,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | PF-05 | Concurrent model warmup | Performance | Run warmups in parallel (if safe) |
 
 ### E. Idempotency Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | ID-01 | Multiple consecutive runs | Integration | Script should succeed each time |
@@ -98,6 +103,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | ID-04 | Partial state recovery | Integration | Handle interrupted previous run |
 
 ### F. Recovery/Resilience Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | RC-01 | Server crash during startup | E2E | Script detects and reports |
@@ -106,6 +112,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | RC-04 | GPU driver reset | E2E | Handle nvidia-smi failures |
 
 ### G. Compatibility Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | COMP-01 | bash 3.2+ (macOS) | Unit | POSIX compliance |
@@ -116,6 +123,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 | COMP-06 | NVIDIA driver versions | Integration | Test with various driver versions |
 
 ### H. Observability Tests
+
 | Test ID | Test Name | Level | Description |
 |---------|-----------|-------|-------------|
 | OBS-01 | Log format validation | Unit | Timestamps, structured format |

@@ -8,14 +8,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_DIR="${PROJECT_ROOT}/logs"
-SCRIPT_NAME="$(basename "$0")"
-LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}.log"
-mkdir -p "${LOG_DIR}"
-TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-log() {
-    local msg="[$TIMESTAMP] $1"
-    echo "$msg" | tee -a "${LOG_FILE}"
-}
+
+# Initialize shared logging
+# shellcheck disable=SC1091
+source "${PROJECT_ROOT}/scripts/lib_logging.sh"
+log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
 
 TEST_TMPDIR="$(mktemp -d)"
 cd "$TEST_TMPDIR"
@@ -54,10 +51,12 @@ fi
 # Validate outputs
 log ""
 log "Validating outputs..."
-if [[ -f "${PROJECT_ROOT}/logs/sod.sh.log" ]]; then
-    log "${GREEN}✓ Main log present${NC}"
+# Find the sod.sh log file (most recent)
+SOD_LOG=$(ls -t "${PROJECT_ROOT}/logs/"*-sod-run.log 2>/dev/null | head -1)
+if [[ -f "$SOD_LOG" ]]; then
+    log "Main log present: $(basename "$SOD_LOG")"
 else
-    log "${RED}✗ Main log missing${NC}"
+    log "Main log missing"
     exit 1
 fi
 if [[ -f "${PROJECT_ROOT}/logs/ollama-server.log" ]]; then

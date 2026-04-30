@@ -21,14 +21,14 @@ curl http://localhost:11434/api/tags
 #### Show Model Information
 ```bash
 curl http://localhost:11434/api/show -d '{
-  "name": "qwen2.5:72b-instruct"
+  "name": "qwen2.5-coder:32b-gpu"
 }'
 ```
 
 #### Generate Text
 ```bash
 curl http://localhost:11434/api/generate -d '{
-  "model": "qwen2.5:72b-instruct",
+  "model": "qwen2.5-coder:32b-gpu",
   "prompt": "Explain quantum computing in simple terms",
   "stream": false
 }'
@@ -37,7 +37,7 @@ curl http://localhost:11434/api/generate -d '{
 #### Chat Completion
 ```bash
 curl http://localhost:11434/api/chat -d '{
-  "model": "qwen2.5:72b-instruct",
+  "model": "qwen2.5-coder:32b-gpu",
   "messages": [
     {"role": "user", "content": "Explain quantum computing in simple terms"}
   ],
@@ -56,15 +56,15 @@ curl http://localhost:11434/api/embeddings -d '{
 #### Copy a Model
 ```bash
 curl -X POST http://localhost:11434/api/copy -d '{
-  "source": "qwen2.5:72b-instruct",
-  "destination": "qwen2.5:72b-instruct:backup"
+  "source": "qwen2.5-coder:32b-gpu",
+  "destination": "qwen2.5-coder:32b:backup"
 }'
 ```
 
 #### Delete a Model
 ```bash
 curl -X DELETE http://localhost:11434/api/delete -d '{
-  "name": "qwen2.5:72b-instruct:backup"
+  "name": "qwen2.5-coder:32b:backup"
 }'
 ```
 

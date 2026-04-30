@@ -1,6 +1,6 @@
 # ollama-devops Test Infrastructure — Implementation Summary
 
-## 🎯 What Was Built
+## What Was Built
 
 A complete, production-grade testing framework following DevOps best practices has been created for the ollama-devops scripts (`sod.sh` and `eod.sh`).
 
@@ -19,7 +19,7 @@ A complete, production-grade testing framework following DevOps best practices h
 
 ---
 
-## 📁 Directory Structure
+## Directory Structure
 
 ```
 ollama-devops/
@@ -27,13 +27,14 @@ ollama-devops/
 │   ├── sod.sh      (fixed: startup issues resolved)
 │   └── eod.sh
 ├── tests/                          ← NEW: Complete test suite
+│   ├── .batsrc                    ← Bats configuration
+│   ├── .env.example               ← Test environment template
 │   ├── README.md                  ← Full documentation
 │   ├── TEST_PLAN.md               ← Detailed test strategy
 │   ├── TEST_SUMMARY.md            ← Quick reference
 │   ├── IMPLEMENTATION_SUMMARY.md  ← This file
-│   ├── .batsrc                    ← Bats configuration
-│   ├── .env.example               ← Test environment template
-│   ├── run_all.sh                 ← 🎯 Master runner
+│   ├── ARCHITECTURE.txt           ← Architecture diagrams
+│   ├── run_all.sh                 ← Master test runner
 │   ├── run_lint.sh                ← Static analysis
 │   ├── run_coverage.sh            ← Coverage reports
 │   ├── setup.sh                   ← Environment setup wizard
@@ -55,7 +56,8 @@ ollama-devops/
 │   │   ├── run_all.sh
 │   │   └── test_full_workflow.bats
 │   ├── fixtures/                  ← Static test data
-│   │   └── nvidia-smi-output.csv
+│   │   ├── nvidia-smi-output.csv
+│   │   └── model-list-sample.txt
 │   ├── mocks/                     ← Mock binaries (offline testing)
 │   │   ├── install.sh
 │   │   ├── ollama (mock)
@@ -67,19 +69,30 @@ ollama-devops/
 │   │   └── pkill (mock)
 │   └── test_utils/                ← Shared libraries
 │       └── common.sh              ← Assertion helpers
-├── Makefile                       ← Build automation
-└── scripts/ (fixed)
-    ├── sod.sh
-    └── eod.sh
+├── systemd/                        ← systemd service files
+│   ├── ollama.service
+│   ├── platform-overrides/
+│   │   └── cachyos-nvidia.conf
+│   └── README.md
+├── platform/                       ← Platform configurations
+│   ├── macbook-m4-24gb-optimized/
+│   │   ├── modfiles/
+│   │   └── .env
+│   └── cachyos-i9-32gb-nvidia-4090/
+│       ├── modfiles/
+│       └── .env
+├── docker-compose.yml              ← Qdrant
+├── Makefile                        ← Build automation
+└── logs/                           ← runtime logs
 ```
 
 ---
 
-## 🔧 Components Built
+## Components Built
 
 ### 1. Master Test Runner (`tests/run_all.sh`)
 
-**Purpose:** One command to rule them all.
+**Purpose:** One command to run all test suites.
 
 **Usage:**
 ```bash
@@ -219,7 +232,7 @@ test_basic_smoke.bats validates:
 
 Tests:
 - Actual Ollama server startup (not mocked)
-- Real model downloads (nomic-embed-text, optionally qwen2.5:7b)
+- Real model downloads
 - GPU detection via nvidia-smi
 - Qdrant container startup
 - API endpoint responses
@@ -227,11 +240,10 @@ Tests:
 
 **Running E2E tests:**
 ```bash
-# From inside VM or real CachyOS system:
 ./tests/e2e/run_all.sh
 ```
 
-⚠️ **Warning:** Downloads models (7GB minimum). Run separately from CI.
+⚠️ **Warning:** Downloads models. Run separately from CI.
 
 ---
 
@@ -243,6 +255,7 @@ Provides drop-in replacements for external dependencies, enabling:
 - Deterministic error simulation
 
 **Mocked binaries:**
+
 | Binary | Purpose | Modes |
 |--------|---------|-------|
 | `ollama` | Ollama server/client | `default`, `always-fail`, `start-fail-2`, `slow` |
@@ -313,19 +326,19 @@ make clean         # Remove test artifacts
 
 ---
 
-## 🎨 Design Principles Applied
+## Design Principles Applied
 
 1. **Shift-Left** — Lint + unit tests run before commits (fast)
 2. **Isolation** — Each test gets fresh tmpdir, no shared state
 3. **Idempotent** — Tests can run repeatedly without side effects
-4. **Fast Feedback** — Unit <30s, smoke <1min, integration <5min
+4. **Fast Feedback** — Unit <30s, Smoke <1min, Integration <5min
 5. **Automation** — Single command, CI-ready, proper exit codes
 6. **Observability** — Logs in `tests/logs/`, colored output
 7. **Maintainability** — DRY utilities, fixtures, clear names
 
 ---
 
-## 📊 Test Coverage Matrix
+## Test Coverage Matrix
 
 | Script | Unit Coverage | Integration | Smoke | E2E |
 |--------|--------------|-------------|-------|-----|
@@ -336,7 +349,7 @@ make clean         # Remove test artifacts
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Setup Environment (once)
 ```bash
@@ -369,7 +382,7 @@ make test-all               # ~5-7 min
 
 ---
 
-## 📈 CI/CD Integration Examples
+## CI/CD Integration Examples
 
 ### GitHub Actions
 
@@ -389,12 +402,7 @@ jobs:
       - name: Run test suite
         run: |
           chmod +x tests/run_all.sh
-          ./tests/run_all.sh --all  # except E2E
-      - name: Upload coverage
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: tests/coverage/
+          ./tests/run_all.sh --all
 ```
 
 ### GitLab CI
@@ -407,17 +415,17 @@ test:
     - ./tests/run_all.sh --all
   artifacts:
     reports:
-      junit: tests/reports/junit.xml  # if bats-junit installed
+      junit: tests/reports/junit.xml
 ```
 
 ---
 
-## 📝 Adding New Tests
+## Adding New Tests
 
 ### Add a unit test:
 1. Create `tests/unit/test_<feature>.bats`
 2. Follow bats template (see existing tests)
-3. Add to `run_all.sh` via auto-discovery (no change needed)
+3. Auto-discovered by run_all.sh
 
 ### Add an integration test:
 1. Copy script to test into tmpdir in `setup()`
@@ -431,7 +439,7 @@ test:
 
 ---
 
-## 🔍 Debugging Tests
+## Debugging Tests
 
 ```bash
 # Run single test with verbose output
@@ -452,22 +460,22 @@ make clean
 
 ---
 
-## 🎯 Success Criteria Met
+## Success Criteria Met
 
-- ✅ **All scripts have unit tests** (configuration, validation, ensure_model, readiness, warmup)
-- ✅ **Integration tests cover full workflow**
-- ✅ **Smoke tests validate basic health**
-- ✅ **Static analysis enforced** (shellcheck + bash -n) — **PASSING**
-- ✅ **Mock infrastructure for offline testing**
-- ✅ **CI-ready with proper exit codes**
-- ✅ **Documentation complete** (README, TEST_PLAN, SUMMARY)
-- ✅ **Coverage reporting infrastructure** (kcov)
-- ✅ **Makefile automation**
-- ✅ **Pre-commit hookable**
+- ✅ All scripts have unit tests
+- ✅ Integration tests cover full workflow
+- ✅ Smoke tests validate basic health
+- ✅ Static analysis enforced (shellcheck + bash -n) — PASSING
+- ✅ Mock infrastructure for offline testing
+- ✅ CI-ready with proper exit codes
+- ✅ Documentation complete (README, TEST_PLAN, SUMMARY)
+- ✅ Coverage reporting infrastructure (kcov)
+- ✅ Makefile automation
+- ✅ Pre-commit hookable
 
 ---
 
-## 🏆 Standards Compliance
+## Standards Compliance
 
 | DevOps Principle | Implementation |
 |------------------|----------------|
@@ -482,34 +490,17 @@ make clean
 
 ---
 
-## 📚 Reference
+## Reference
 
 - **Test Plan:** `tests/TEST_PLAN.md` — Full test strategy, categories, acceptance criteria
 - **User Guide:** `tests/README.md` — Complete usage documentation
 - **Quick Ref:** `tests/TEST_SUMMARY.md` — One-page matrix
+- **Architecture:** `tests/ARCHITECTURE.txt` — Visual diagrams
 
 ---
 
-**Status:** ✅ **Production Ready**  
+**Status:** Production Ready  
 **Built by:** Kilo (AI Assistant)  
-**Date:** 2026-04-29  
+**Date:** 2026-04-30  
 **Version:** 1.0.0  
 **Compatible with:** Bats-core v1.5+, Bash 3.2+, Shellcheck 0.7+
-
----
-
-## Notes on sod.sh Fix
-
-The original `sod.sh` had a critical bug: `OLLAMA_HOST="${OLLAMA_HOST:-::}"` produced invalid URL `http://:::11434` causing server startup failure.
-
-**Fixed to:** `OLLAMA_HOST="${OLLAMA_HOST:-[::]:11434}"` (proper IPv6 with port binding).
-
-Additional improvements matching MacBook reference:
-- Added pre-flight process cleanup (`pgrep`/`pkill`)
-- Server output logging (`logs/ollama-server.log`)
-- Diagnostic tail on failure
-- Configurable binary via `OLLAMA_BIN`
-- Readiness uses `ollama list` instead of curl
-- API connectivity checks after startup
-
-All these are now covered by unit and integration tests.
