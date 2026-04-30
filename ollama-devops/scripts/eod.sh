@@ -92,7 +92,13 @@ esac
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 LOG_DIR="${PROJECT_ROOT}/logs"
-LOG_FILE="${LOG_DIR}/eod-${PLATFORM}.log"
+# Create log filename with script name and parameters
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_ARGS=""
+if [[ $# -gt 0 ]]; then
+    SCRIPT_ARGS="$(echo "$*" | tr ' ' '-')"
+fi
+LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}${SCRIPT_ARGS}.log"
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
 
 mkdir -p "${LOG_DIR}"
