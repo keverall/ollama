@@ -179,6 +179,8 @@ log INFO "Stopping Docker containers..." "🐳 "
 DOCKER_COMPOSE_FILE=""
 if [[ -f "${PROJECT_ROOT}/docker-compose.yml" ]]; then
     DOCKER_COMPOSE_FILE="${PROJECT_ROOT}/docker-compose.yml"
+elif [[ -f "${PROJECT_ROOT}/ollama-devops/docker-compose.yml" ]]; then
+    DOCKER_COMPOSE_FILE="${PROJECT_ROOT}/ollama-devops/docker-compose.yml"
 elif [[ -f "${SCRIPT_DIR}/docker-compose.yml" ]]; then
     DOCKER_COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 fi

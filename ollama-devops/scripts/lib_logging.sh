@@ -24,13 +24,18 @@ _LIB_LOGGING_SOURCED=1
 : "${LOG_LEVEL:-INFO}"
 
 # Log level precedence (higher number = more critical)
-declare -A LOG_LEVEL_PRIORITY=(
-    [DEBUG]=1
-    [INFO]=2
-    [WARN]=3
-    [ERROR]=4
-    [SUCCESS]=2
-)
+# Bash 3.2 compatible: use function instead of associative array
+log_level_priority() {
+    local level="$1"
+    case "$level" in
+        DEBUG) echo 1 ;;
+        INFO) echo 2 ;;
+        WARN) echo 3 ;;
+        ERROR) echo 4 ;;
+        SUCCESS) echo 2 ;;
+        *) echo 0 ;;  # Unknown levels get lowest priority
+    esac
+}
 
 # Emoji mapping for log levels
 log_emoji() {
@@ -138,9 +143,14 @@ log() {
     fi
 
     # Check log level filter
-    if [[ -n "${LOG_LEVEL_FILTER:-}" ]] && \
-       [[ "${LOG_LEVEL_PRIORITY[$level]:-0}" -lt "${LOG_LEVEL_PRIORITY[$LOG_LEVEL_FILTER]:-0}" ]]; then
-        return 0
+    if [[ -n "${LOG_LEVEL_FILTER:-}" ]]; then
+        local current_priority
+        current_priority=$(log_level_priority "$level")
+        local filter_priority
+        filter_priority=$(log_level_priority "$LOG_LEVEL_FILTER")
+        if [[ "$current_priority" -lt "$filter_priority" ]]; then
+            return 0
+        fi
     fi
 
     local timestamp
@@ -164,7 +174,9 @@ log() {
 
     # Write to console (interpret ANSI escapes) and log file (strip them)
     printf '%b\n' "$output"
-    printf '%s\n' "$output" | sed 's/\x1b\[[0-9;]*m//g' >> "${LOG_FILE}"
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        printf '%s\n' "$output" | sed 's/\x1b\[[0-9;]*m//g' >> "${LOG_FILE}"
+    fi
 }
 
 #----------------------------------------------------------------------------
