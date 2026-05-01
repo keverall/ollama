@@ -117,10 +117,11 @@ fi
 OLLAMA_HOST="${OLLAMA_HOST:-[::]:11434}"
 OLLAMA_PORT="${OLLAMA_PORT:-11434}"
 OLLAMA_BASE_URL="http://localhost:${OLLAMA_PORT}"
-[ -z "${DEFAULT_MODELS:-}" ] && DEFAULT_MODELS=""
-[ -z "${OLLAMA_NUM_PARALLEL:-}" ] && OLLAMA_NUM_PARALLEL="24"
-\[ -z "${OLLAMA_MAX_LOADED_MODELS:-}" ] && OLLAMA_MAX_LOADED_MODELS="2"
-\[ -z "${QDRANT_PORT:-}" ] && QDRANT_PORT="6333"
+QDRANT_PORT="${QDRANT_PORT:-6333}"
+
+# Performance tuning settings (with defaults)
+OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-1}"
+OLLAMA_MAX_LOADED_MODELS="${OLLAMA_MAX_LOADED_MODELS:-3}"
 
 # Resolve OLLAMA_BIN to absolute path if possible
 OLLAMA_BIN="${OLLAMA_BIN:-ollama}"
@@ -135,18 +136,24 @@ fi
 log INFO "🚀 Starting Ollama DevOps Environment..."
 log INFO "Platform: $PLATFORM"
 log INFO "Project root: ${PROJECT_ROOT}"
- log INFO "Ollama bin: ${OLLAMA_BIN}"
- log INFO "Modfile dir: ${MODFILE_DIR}"
- 
- # Backward compatibility: if DEFAULT_MODELS not set but MODEL_LIST is, use it
- if [[ -z "${DEFAULT_MODELS:-}" && -n "${MODEL_LIST:-}" ]]; then
-     DEFAULT_MODELS="$MODEL_LIST"
-     log INFO "Using MODEL_LIST as DEFAULT_MODELS: $DEFAULT_MODELS"
- fi
- 
- if [[ "$DRY_RUN" == true ]]; then
-     log WARN "DRY RUN MODE - No actual changes will be made"
- fi
+log INFO "Ollama bin: ${OLLAMA_BIN}"
+log INFO "Modfile dir: ${MODFILE_DIR}"
+
+# Backward compatibility: if DEFAULT_MODELS not set but MODEL_LIST is, use it
+if [[ -z "${DEFAULT_MODELS:-}" && -n "${MODEL_LIST:-}" ]]; then
+    DEFAULT_MODELS="$MODEL_LIST"
+    log INFO "Using MODEL_LIST as DEFAULT_MODELS: $DEFAULT_MODELS"
+fi
+
+# Ensure DEFAULT_MODELS is set (default to empty if not specified)
+DEFAULT_MODELS="${DEFAULT_MODELS:-}"
+
+# Ensure DEVOPS_MODEL is set (default to empty if not specified)
+DEVOPS_MODEL="${DEVOPS_MODEL:-}"
+
+if [[ "$DRY_RUN" == true ]]; then
+    log WARN "DRY RUN MODE - No actual changes will be made"
+fi
 
 #----------------------------------------------------------------------------
 # Helper Functions
@@ -799,8 +806,8 @@ get_modfile_for_model() {
 
 # Ensure each model in DEFAULT_MODELS
 MODEL_CHECK_STATUS=0
-IFS=',' read -ra MODEL_ARRAY <<< "$DEFAULT_MODELS"
-for model in "${MODEL_ARRAY[@]}"; do
+IFS=','
+for model in $DEFAULT_MODELS; do
     model_trimmed="$(echo "$model" | xargs)"
     modfile_name="$(get_modfile_for_model "$model_trimmed" "$PLATFORM" || true)"
     ensure_model "$model_trimmed" "$modfile_name" || MODEL_CHECK_STATUS=1
@@ -810,9 +817,12 @@ unset IFS
 # Handle DEVOPS_MODEL if defined and not already in DEFAULT_MODELS
 if [[ -n "$DEVOPS_MODEL" ]]; then
     devops_already_handled=false
-    for m in "${MODEL_ARRAY[@]}"; do
-        [[ "$(echo "$m" | xargs)" == "$DEVOPS_MODEL" ]] && devops_already_handled=true && break
+    IFS=','
+    for m in $DEFAULT_MODELS; do
+        m_trimmed="$(echo "$m" | xargs)"
+        [[ "$m_trimmed" == "$DEVOPS_MODEL" ]] && devops_already_handled=true && break
     done
+    unset IFS
     
     if [[ "$devops_already_handled" == false ]]; then
         log "📦 Checking DevOps model: ${DEVOPS_MODEL}"
