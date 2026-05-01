@@ -6,7 +6,7 @@
 # Author:           Keverall
 # Date:             2026-04-30
 # Version:          1.0.0
-# Usage:            sudo ./scripts/setup_passwordless_sudo.sh
+# Usage:            sudo ./scripts/initialisation/setup_passwordless_sudo.sh
 # Requirements:     root/sudo access to install sudoers rules
 #============================================================================
 

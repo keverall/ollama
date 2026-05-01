@@ -104,7 +104,7 @@ On Linux, `sod.sh` installs `ollama.service` to `/etc/systemd/system/` and confi
 
 **Docker**: Required for Qdrant. Install: `sudo pacman -S docker`. Start: `sudo systemctl enable --now docker`.
 
-**Passwordless sudo**: `sod.sh` manages systemd service. Configure once: `sudo ./scripts/setup_passwordless_sudo.sh` or manually add to `/etc/sudoers`:
+**Passwordless sudo**: `sod.sh` manages systemd service. Configure once: `sudo ./scripts/initialisation/setup_passwordless_sudo.sh` or manually add to `/etc/sudoers`:
 ```
 $USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start ollama
 $USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop ollama

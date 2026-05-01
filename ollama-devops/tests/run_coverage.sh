@@ -33,17 +33,20 @@ if ! command -v bashcov &>/dev/null; then
     fi
 fi
 
-# Clean previous coverage
+# Clean previous coverage (in project root)
 rm -rf "$COVERAGE_DIR"
 mkdir -p "$COVERAGE_DIR"
 
-log "Running tests with coverage..."
+log "Running tests with coverage from project root..."
 # Export project root for tests that need it
 export PROJECT_ROOT
 
+# Change to project root so bashcov writes coverage/ there (not tests/coverage/)
+cd "$PROJECT_ROOT"
+
 # Run the full test suite (unit, integration, smoke) under bashcov
 # Use --root to mark project root, and -- to pass args to the test runner
-COVERAGE_DIR="$COVERAGE_DIR" bashcov --root "$PROJECT_ROOT" -- "$PROJECT_ROOT/tests/run_all.sh" --all 2>&1 | tee -a "${LOG_FILE}" || true
+COVERAGE_DIR="$COVERAGE_DIR" bashcov --root "$PROJECT_ROOT" -- "$PROJECT_ROOT/tests/run_all.sh" "$@" 2>&1 | tee -a "${LOG_FILE}" || true
 
 log ""
 log "Coverage report generated at: $COVERAGE_DIR/index.html"

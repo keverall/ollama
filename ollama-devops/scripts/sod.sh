@@ -178,7 +178,7 @@ check_passwordless_sudo() {
     # Passwordless sudo not configured - warn but don't block
     log WARN "Passwordless sudo not configured for systemctl commands"
     log WARN "Service operations will be skipped unless run as root"
-    log WARN "Run: sudo $SCRIPT_DIR/setup_passwordless_sudo.sh"
+    log WARN "Run: sudo $SCRIPT_DIR/initialisation/setup_passwordless_sudo.sh"
     log WARN "Or run this script as root: sudo $0"
     return 1  # Return non-zero to indicate issue
 }

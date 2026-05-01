@@ -190,7 +190,8 @@ ollama-devops/
 │   ├── sod.sh                       # Start of Day script
 │   ├── eod.sh                       # End of Day script
 │   ├── lib_logging.sh               # Shared logging library
-│   ├── setup_passwordless_sudo.sh   # Sudo configuration helper
+│   ├── initialisation/
+│   │   └── setup_passwordless_sudo.sh   # Sudo configuration helper
 │   └── .envexample                  # Configuration template
 ├── platform/                         # Platform-specific configurations
 │   ├── macbook-m4-24gb-optimized/

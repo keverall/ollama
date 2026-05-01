@@ -90,30 +90,61 @@ tests/
 
 ## Prerequisites
 
-### For All Tests
-- `bash` (>= 3.2) — scripts are compatible with macOS's default bash 3.2 and modern Linux (bash ≥5)
-- `bats` (Bash Automated Testing System)
-- `shellcheck`
+### A. Runtime Dependencies (to run the scripts themselves)
 
-> **Cross-platform note**: Scripts avoid bash 4+ features (associative arrays, `timeout` command) to ensure compatibility with macOS. Unit tests include mocks to simulate different platforms and shells without requiring multiple OSes.
+These are required to actually execute `sod.sh`/`eod.sh` (not just tests):
 
-### Install Test Dependencies (Ubuntu/Debian)
+| Tool | Purpose | Install |
+|------|---------|---------|
+| `bash` | Script interpreter (≥3.2 on macOS, ≥5 on Linux) | Built-in on macOS/Linux |
+| `ollama` | LLM server and model management | [ollama.com](https://ollama.com) |
+| `docker` | Qdrant vector database (optional) | Docker Desktop / apt/pacman |
+| `curl` | API connectivity checks | Built-in on macOS/Linux |
+| `nvidia-smi` | GPU detection (Linux only) | NVIDIA driver package |
+| `systemd` | Service management (Linux only) | Built-in on most Linux |
+
+Platform-specific setup scripts handle these:
+```bash
+# Linux (CachyOS/Arch)
+sudo pacman -S --needed ollama docker nvidia-container-toolkit
+
+# macOS
+# Download Ollama from ollama.com
+```
+
+### B. Test Dependencies (to run the test suite)
+
+Required for developing and testing the scripts:
+
+| Tool | Purpose | Install |
+|------|---------|---------|
+| `bats` | Test framework (runs `.bats` files) | `apt install bats` / `pacman -S bats` / `brew install bats-core` |
+| `shellcheck` | Static analysis (linting) | `apt install shellcheck` / `pacman -S shellcheck` / `brew install shellcheck` |
+| `bashcov` | Code coverage (optional, CI uses it) | `gem install bashcov` (requires Ruby) |
+| `ruby` | Ruby runtime (required for bashcov) | Usually preinstalled on macOS; Linux: `apt install ruby` / `pacman -S ruby` |
+
+**Install all test dependencies at once:**
+
+Ubuntu/Debian:
 ```bash
 sudo apt-get update
-sudo apt-get install -y bats shellcheck
+sudo apt-get install -y bats shellcheck ruby
+gem install bashcov
 ```
 
-### Install Test Dependencies (Arch/CachyOS)
+Arch/CachyOS:
 ```bash
-sudo pacman -S --needed bats shellcheck
+sudo pacman -S --needed bats shellcheck ruby
+gem install bashcov
 ```
 
-### Install Mocks (optional, for offline testing)
+macOS:
 ```bash
-cd tests/mocks
-./install.sh
-# Use by: export PATH="$PWD:$PATH"
+brew install bats-core shellcheck ruby
+gem install bashcov
 ```
+
+> **Note:** `bats` and `shellcheck` are required to run tests locally. `bashcov` is only needed for generating coverage reports (enforced on CI). The `setup.sh` script installs `bats` and `shellcheck` automatically; `bashcov` must be installed separately.
 
 ## Running Tests
 
@@ -294,19 +325,115 @@ setup() {
 
 ## Test Coverage
 
-To measure coverage:
-```bash
-# Install kcov
-cargo install kcov   # or apt-get install kcov
+**Coverage measures which lines of your production scripts are actually executed during tests.** It helps identify untested code paths and gauge test effectiveness.
 
-# Generate coverage report
-./tests/run_coverage.sh   # creates tests/coverage/index.html
+### What Gets Measured
+
+Coverage **excludes**:
+- Test scripts (`tests/*.bats`, `tests/*.sh`)
+- Mock binaries (`tests/mocks/`)
+- Fixtures and test utilities
+
+Coverage **includes only**:
+- Production scripts under `scripts/` (e.g., `sod.sh`, `eod.sh`, `lib_logging.sh`)
+
+### Prerequisites
+
+```bash
+# Install bashcov (Ruby gem)
+gem install bashcov
+
+# Or system package (if available)
+# Ubuntu: apt install ruby-bashcov
+# Arch: pacman -S ruby-bashcov
 ```
 
-Coverage goals:
+### Generate Coverage Report
+
+**Preferred method (via Makefile from project root):**
+```bash
+cd /path/to/ollama   # project root, not ollama-devops/
+make coverage        # generates ollama-devops/coverage/index.html
+```
+
+**Direct script invocation:**
+```bash
+cd ollama-devops
+./tests/run_coverage.sh   # generates coverage/index.html
+```
+
+### View the Report
+
+```bash
+# Open in browser (from project root)
+open ollama-devops/coverage/index.html     # macOS
+xdg-open ollama-devops/coverage/index.html # Linux
+```
+
+The HTML report shows:
+- **Line coverage** percentage per file
+- Color-coded line highlighting (green = covered, red = missing)
+- Summary across all production scripts
+
+### Coverage Goals
+
+Target thresholds (enforced in CI):
 - **Lines:** > 80%
 - **Functions:** > 75%
 - **Branches:** > 70%
+
+Current coverage is measured on each CI run. Falling below thresholds fails the build.
+
+### How It Works
+
+`bashcov` instruments Bash execution using `set -x` (debug mode) and records which lines run. SimpleCov (Ruby) aggregates results and applies filters from `.simplecov`:
+
+- Excludes all paths matching `/tests/`, `/test/`, `/spec/`
+- Excludes `/mocks/` and `/fixtures/`
+- Reports only on `scripts/*.sh`
+
+Coverage data is written to `ollama-devops/coverage/` (gitignored).
+
+### Interpreting Results
+
+**Low coverage on a script means:**
+- Some code paths are untested by the current test suite
+- Consider adding unit or integration tests for the missing lines
+- Review branches (if/else, case statements) that may lack test cases
+
+**Example:** If `sod.sh` shows 60% line coverage, look for:
+- Untested error handling branches
+- Platform-specific code paths (macOS vs Linux) not exercised
+- Uncalled functions or configuration options
+
+### Updating Coverage Configuration
+
+The `.simplecov` file at project root controls exclusions. To include additional files or adjust filters, edit it and re-run:
+
+```bash
+make coverage
+```
+
+### Troubleshooting
+
+**"bashcov: command not found"**
+```bash
+gem install bashcov
+# Ensure ~/.local/share/gem/ruby/*/bin is in PATH
+export PATH="$HOME/.local/share/gem/ruby/$(ruby -e 'print RUBY_VERSION')/bin:$PATH"
+```
+
+**"Coverage report shows 0%"**
+- Ensure `.simplecov` exists at project root
+- Verify tests actually execute production code (run with `DEBUG=1`)
+- Check that `PROJECT_ROOT` is correctly set
+
+**Coverage includes test files**
+- Confirm `.simplecov` has proper `add_filter` rules
+- Regenerate: `make clean && make coverage`
+
+**Report shows deleted temp files (warnings)**
+These are harmless — bashcov tracks scripts from temp locations during bats execution.
 
 ## Debugging Failing Tests
 

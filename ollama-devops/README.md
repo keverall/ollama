@@ -38,7 +38,8 @@ ollama-devops/
 │   ├── sod.sh                       # Start of Day script
 │   ├── eod.sh                       # End of Day script
 │   ├── lib_logging.sh               # Shared logging library
-│   └── setup_passwordless_sudo.sh   # Sudo configuration utility
+│   └── initialisation/
+│       └── setup_passwordless_sudo.sh   # Sudo configuration utility
 ├── systemd/                          # systemd service definitions (Linux)
 │   ├── ollama.service               # Main service unit
 │   ├── platform-overrides/          # Drop-in configuration overrides
@@ -157,20 +158,72 @@ See `platform/cachyos-i9-32gb-nvidia-4090/README.md` for platform configuration.
 
 ## Testing
 
+### Quick Commands
+
 ```bash
-# Run all tests (unit + smoke + integration + lint)
-./tests/run_all.sh
+# Run full test suite (lint + unit + smoke + integration)
+./tests/run_all.sh              # ~10 minutes
 
-# Run specific test suites
-./tests/run_all.sh --lint        # ShellCheck only (~5s)
+# Run specific suites (faster feedback)
+./tests/run_all.sh --lint        # ShellCheck + syntax (~5s)
 ./tests/run_all.sh --unit        # Unit tests only (~30s)
-./tests/run_all.sh --smoke       # Smoke tests only (~1min)
-./tests/run_all.sh --integration # Integration tests (~5min)
+./tests/run_all.sh --smoke       # Smoke tests only (~1 min)
+./tests/run_all.sh --integration # Integration tests (~5 min)
 
-# Run a specific test file
+# Run a single test file
 bats tests/unit/test_configuration.bats
 
-# Dry-run (no changes)
+# From project root (one level up), use make:
+cd .. && make test-unit           # Same as above, from anywhere
+make test-all                     # Full suite from root
+make coverage                     # Generate coverage report
+```
+
+### Test Pyramid
+
+```
+    E2E Tests      (few, slow, full hardware, ~30 min)
+    Integration    (moderate, mocks, ~5 min)
+    Smoke Tests    (fast, basic health, ~1 min)
+    Unit Tests     (many, isolated, ~30s)
+```
+
+- **Unit** — Individual functions in isolation (mocked dependencies)
+- **Smoke** — Basic script execution, environment detection
+- **Integration** — Full `sod.sh`/`eod.sh` workflows with mock binaries
+- **E2E** — Real hardware, actual Ollama server, model downloads
+
+See [docs/tests/README.md](docs/tests/README.md) for the complete test guide.
+
+### Coverage
+
+**What it measures:** Fraction of production script lines actually executed during tests. Only scripts under `scripts/` are measured — test scripts and mocks are excluded.
+
+**Generate report:**
+```bash
+# From project root (recommended)
+make coverage
+
+# Or directly
+cd ollama-devops && ./tests/run_coverage.sh
+```
+
+Report writes to `ollama-devops/coverage/index.html` (gitignored). Open in browser to see line-by-line coverage:
+- Green — executed
+- Red — never run (missing test case)
+
+**Prerequisites:** `bashcov` Ruby gem. Install: `gem install bashcov`.
+
+**Goals:** Lines > 80%, Functions > 75%, Branches > 70%. Coverage is checked on CI; failing thresholds breaks the build.
+
+**Configuration:** Exclusions are defined in `.simplecov` at project root (filters `/tests/`, `/mocks/`, `/fixtures/`).
+
+See [docs/tests/README.md#test-coverage](docs/tests/README.md#test-coverage) for full details on interpreting results and troubleshooting.
+
+### Dry-Run
+
+Test script changes without affecting your system:
+```bash
 ./scripts/sod.sh --dry-run
 ./scripts/eod.sh --dry-run
 ```
@@ -194,8 +247,8 @@ sudo pacman -S --needed ollama docker nvidia-container-toolkit
 sudo systemctl enable --now docker
 
 # 3. Run passwordless sudo setup (required for systemd management)
-chmod +x scripts/setup_passwordless_sudo.sh
-sudo scripts/setup_passwordless_sudo.sh
+chmod +x scripts/initialisation/setup_passwordless_sudo.sh
+sudo scripts/initialisation/setup_passwordless_sudo.sh
 
 # 4. Initialize environment
 chmod +x scripts/*.sh tests/*.sh
@@ -243,9 +296,62 @@ Key variables used throughout the system:
 
 ## Development
 
-- **Makefile**: Build automation and development tasks (`make test-unit`, `make test-all`, `make lint`)
-- **ShellCheck**: All scripts pass shellcheck validation
-- **Bats**: Comprehensive test suite using Bash Automated Testing System
+### Prerequisites
+
+To develop and test the scripts, install these tools **in addition** to the runtime requirements above:
+
+| Tool | Purpose | Install (Ubuntu/Debian) | Install (Arch/CachyOS) | Install (macOS) |
+|------|---------|------------------------|------------------------|-----------------|
+| `bats` | Test framework | `sudo apt install bats` | `sudo pacman -S bats` | `brew install bats-core` |
+| `shellcheck` | Linter | `sudo apt install shellcheck` | `sudo pacman -S shellcheck` | `brew install shellcheck` |
+| `bashcov` | Coverage (optional) | `gem install bashcov` | `gem install bashcov` | `gem install bashcov` |
+| `make` | Build automation | `sudo apt install make` | `sudo pacman -S make` | `brew install make` |
+
+Only `bats` and `shellcheck` are required to run tests. `bashcov` is needed only for coverage reports (enforced on CI).
+
+**Quick install all test dependencies:**
+```bash
+# Ubuntu/Debian
+sudo apt-get update && sudo apt-get install -y bats shellcheck
+
+# Arch/CachyOS
+sudo pacman -S --needed bats shellcheck
+
+# macOS
+brew install bats-core shellcheck
+
+# Coverage (any platform with Ruby)
+gem install bashcov
+```
+
+### Workflow
+
+```bash
+# From ollama-devops directory:
+cd ollama-devops
+
+# Lint only (~5s)
+make lint
+
+# Run unit tests (~30s)
+make test-unit
+
+# Run full test suite (~10 min)
+make test-all
+
+# Generate coverage report (~3 min)
+make coverage    # opens ollama-devops/coverage/index.html
+
+# Or run scripts directly:
+./tests/run_all.sh --lint --unit --smoke --integration
+```
+
+**Before committing:**
+1. `make lint` — zero warnings required
+2. `make test-unit` — all tests must pass
+3. `make coverage` — stay above thresholds (lines >80%)
+
+See [docs/tests/README.md](docs/tests/README.md) for the complete testing guide.
 
 ## Cost Savings
 

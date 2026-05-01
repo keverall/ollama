@@ -1,0 +1,7 @@
+# Exclude test files from coverage reporting
+exclude:
+  - "*/tests/*"
+  - "*_test.bats"
+  - "*_test.sh"
+  - "tests/**"
+  - "ollama-devops/tests/**"
