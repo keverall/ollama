@@ -875,7 +875,7 @@ if [[ "$DRY_RUN" != true ]]; then
                      else
                          WARMUP_TIMEOUT=120  # 2 minutes for 7B model
                      fi
-                      if echo "Hello" | run_with_timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | tee -a "${LOG_FILE}"; then
+                       if echo "Hello" | run_with_timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | tee -a "${LOG_FILE}"; then
                          log "  ✅ ${warm_model} warmed up and ready."
                      else
                          log "  ⚠️  ${warm_model} warmup timed out or failed after ${WARMUP_TIMEOUT}s."

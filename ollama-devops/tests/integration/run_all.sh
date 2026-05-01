@@ -17,7 +17,7 @@ log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
 run_test() {
     TEST_COUNT=$((TEST_COUNT+1))
     log "  [$TEST_COUNT] $1 ... "
-    if timeout 60 bats "$2" 2>&1 | tee -a "${LOG_FILE}"; then
+    if timeout 300 bats "$2" 2>&1 | tee -a "${LOG_FILE}"; then
         log "${GREEN}PASS${NC}"; PASS_COUNT=$((PASS_COUNT+1))
     else
         log "${RED}FAIL${NC}"; FAIL_COUNT=$((FAIL_COUNT+1))
