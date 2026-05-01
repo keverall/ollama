@@ -35,6 +35,9 @@ logs/
 # Platform-specific environment files (gitignored; copy .envexample to .env)
 /ollama-devops/platform/*/.env
 
+# Coverage reports (bashcov)
+ollama-devops/coverage/
+
 # YAML configuration & lint files
 .yaml
 .yml

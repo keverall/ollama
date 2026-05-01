@@ -2,6 +2,17 @@
 # Smoke tests - quick validation of basic script operations
 
 setup() {
+    # Auto-detect PROJECT_ROOT if not set (allows running test file directly)
+    if [[ -z "${PROJECT_ROOT:-}" ]]; then
+        local test_dir
+        if [[ -n "${BATS_TEST_DIRNAME:-}" ]]; then
+            test_dir="${BATS_TEST_DIRNAME}"
+        else
+            test_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        fi
+        PROJECT_ROOT="$(cd "$test_dir/../.." && pwd)"
+    fi
+
     TEST_TMPDIR="$(mktemp -d)"
     cd "$TEST_TMPDIR"
     mkdir -p logs modfiles
