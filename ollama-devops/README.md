@@ -1,8 +1,16 @@
 # Ollama DevOps
 
-**Version 2.0** — Systemd-integrated lifecycle management for Ollama AI models across MacBook and Linux (CachyOS) platforms.
+**Version 2.0** — Cross-platform (macOS + Linux) lifecycle management for Ollama AI models.
 
 A comprehensive project for managing and deploying Ollama AI models with DevOps best practices, including configuration management, automated deployment, and model lifecycle management across multiple platforms.
+
+## Cross-Platform Compatibility
+
+Scripts are designed to run on both macOS (bash 3.2) and modern Linux (bash ≥5):
+
+- **bash 3.2 compatibility**: `lib_logging.sh` uses function-based lookups instead of associative arrays for log level priority
+- **Portable timeout**: `sod.sh` provides `run_with_timeout()` fallback for systems without GNU `timeout` (macOS)
+- **Platform abstraction**: Unified scripts auto-detect OS and apply appropriate service management (systemd vs direct process)
 
 ## Supported Platforms
 
@@ -119,16 +127,22 @@ ollama-devops/
 ## Platform Management
 
 ### MacBook M4 Pro 24GB
+
 - **Memory Optimizations**: Flash attention and KV cache quantization for 24GB unified memory
 - **Models**: `qwen-devops` (custom DevOps fine-tuned model built from qwen2.5-coder:14b) and `nomic-embed-text`
 - **GPU**: Apple Neural Engine via Metal
 - **Control**: Direct process (no systemd)
 
+See `platform/macbook-m4-24gb-optimized/README.md` for platform configuration.
+
 ### CachyOS RTX 4090
+
 - **GPU Acceleration**: Full NVIDIA GPU offloading with CUDA via systemd-managed service
 - **Models**: Large language models (`qwen2.5-coder:32b-gpu`, `qwen2.5:7b-instruct`, `nomic-embed-text:latest`, `snowflake-arctic-embed`) with GPU-optimized modfiles
 - **Performance**: Optimized for high-throughput inference with systemd service management
 - **Service**: systemd unit with GPU device permissions
+
+See `platform/cachyos-i9-32gb-nvidia-4090/README.md` for platform configuration.
 
 ## Configuration Management
 
@@ -163,8 +177,8 @@ bats tests/unit/test_configuration.bats
 
 ## Requirements
 
-- **macOS**: macOS 13+, Ollama 0.21.2+
-- **Linux**: CachyOS/Arch, Ollama 0.21.2+, NVIDIA drivers with CUDA, systemd
+- **macOS**: macOS 13+, bash 3.2 (bundled), Ollama 0.21.2+
+- **Linux**: CachyOS/Arch, bash ≥5, Ollama 0.21.2+, NVIDIA drivers with CUDA, systemd
 - **Docker**: 20.10+ for Qdrant
 - **Hardware**: See platform-specific requirements
 
@@ -232,6 +246,41 @@ Key variables used throughout the system:
 - **Makefile**: Build automation and development tasks (`make test-unit`, `make test-all`, `make lint`)
 - **ShellCheck**: All scripts pass shellcheck validation
 - **Bats**: Comprehensive test suite using Bash Automated Testing System
+
+## Cost Savings
+
+This project is designed for **local LLM inference** to eliminate cloud API costs.
+
+- **No per-token fees**: After models download once (~20–80 GB), inference is free.
+- **No network latency**: Requests processed locally; on RTX 4090 expect sub-500ms responses for 32B models.
+- **No data egress**: All queries stay on your machine.
+- **Hardware pays for itself**: Processing 5–10M tokens/month on GPT-4 costs $150–$600; a $2000 RTX 4090 breaks even in 4–12 months.
+
+See [Platform Environments](platform/) for hardware-specific performance targets.
+
+### Hardware ROI Table
+
+| Hardware | Model Size | Tokens/sec | Break-even Monthly Tokens | Approx. Cloud Cost Saved/mo |
+|---|---|---|---|---|
+| MacBook M4 Pro 24GB | 14B | ~40 | ~2M | $60 (GPT-4) / $30 (Claude) |
+| RTX 4090 24GB | 32B (50 layers) | ~80 | ~5M | $150 (GPT-4) / $75 (Claude) |
+| RTX 4090 24GB | 7B (full GPU) | ~150 | ~10M | $300 (GPT-4) / $150 (Claude) |
+
+## Environment Files
+
+Platform `.env` files are **gitignored** (contain local paths). After cloning:
+
+```bash
+# MacBook
+cp platform/macbook-m4-24gb-optimized/.envexample platform/macbook-m4-24gb-optimized/.env
+nano platform/macbook-m4-24gb-optimized/.env   # adjust OLLAMA_BIN if needed
+
+# CachyOS
+cp platform/cachyos-i9-32gb-nvidia-4090/.envexample platform/cachyos-i9-32gb-nvidia-4090/.env
+# Edit paths to match your system (OLLAMA_MODELS, OLLAMA_BIN)
+```
+
+Each platform directory includes a `README.md` explaining every variable.
 
 ## License
 

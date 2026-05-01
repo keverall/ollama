@@ -91,9 +91,11 @@ tests/
 ## Prerequisites
 
 ### For All Tests
-- `bash` (>= 3.2)
+- `bash` (>= 3.2) — scripts are compatible with macOS's default bash 3.2 and modern Linux (bash ≥5)
 - `bats` (Bash Automated Testing System)
 - `shellcheck`
+
+> **Cross-platform note**: Scripts avoid bash 4+ features (associative arrays, `timeout` command) to ensure compatibility with macOS. Unit tests include mocks to simulate different platforms and shells without requiring multiple OSes.
 
 ### Install Test Dependencies (Ubuntu/Debian)
 ```bash

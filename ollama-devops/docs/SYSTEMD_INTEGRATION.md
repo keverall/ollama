@@ -2,7 +2,13 @@
 
 ## Overview
 
-The Ollama DevOps project uses systemd for service management on Linux platforms (CachyOS, Arch, etc.). This document explains the architecture, setup, and troubleshooting.
+The Ollama DevOps project uses **systemd for Linux service management** (CachyOS, Arch, etc.) while **macOS uses direct process management**. This document explains the architecture, setup, and troubleshooting for the unified cross-platform scripts.
+
+**Cross-platform compatibility**:
+- Scripts run on both macOS (bash 3.2) and Linux (bash ≥5)
+- `lib_logging.sh` avoids bash 4+ features (associative arrays) for macOS support
+- `sod.sh` includes portable `timeout` fallback for systems without GNU coreutils
+- Automatic platform detection selects appropriate service management strategy
 
 ## Architecture
 
@@ -33,13 +39,48 @@ This file is installed/updated by `sod.sh` from:
 ollama-devops/systemd/ollama.service
 ```
 
-### Platform-Specific Configuration
+### Environment Configuration
 
 The service loads environment from:
 - `/etc/default/ollama` (Debian/Ubuntu style) or
 - `/etc/sysconfig/ollama` (Red Hat style)
 
-` sod.sh` writes platform-specific values to the appropriate file.
+`sod.sh` writes platform-specific values to the appropriate file, sourced from `platform/<platform>/.env`.
+
+**Setting up the platform `.env` first** (needed on fresh clone):
+
+```bash
+# From project root, copy the template for your platform:
+cp platform/macbook-m4-24gb-optimized/.envexample platform/macbook-m4-24gb-optimized/.env
+# or for CachyOS:
+cp platform/cachyos-i9-32gb-nvidia-4090/.envexample platform/cachyos-i9-32gb-nvidia-4090/.env
+
+# Edit .env to set OLLAMA_BIN and OLLAMA_MODELS paths if needed
+nano platform/cachyos-i9-32gb-nvidia-4090/.env
+```
+
+Then run `./scripts/sod.sh` (or `sudo ./scripts/sod.sh`) and it will populate `/etc/default/ollama` from your platform `.env`.
+
+**Manual edit** (after automatic write):
+```bash
+sudo nano /etc/default/ollama
+```
+
+After editing:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+```
+
+Typical contents (Linux/CachyOS):
+```bash
+OLLAMA_HOST=::
+OLLAMA_PORT=11434
+OLLAMA_NUM_PARALLEL=24
+OLLAMA_MAX_LOADED_MODELS=2
+OLLAMA_GPU_LAYERS=50
+CUDA_VISIBLE_DEVICES=0
+```
 
 ### GPU Device Access (CachyOS/NVIDIA)
 
@@ -68,6 +109,14 @@ sudo systemctl daemon-reload
 ## Setup and Deployment
 
 ### First-Time Installation
+
+**Prerequisites:**
+- Install Ollama (from AUR: `yay -S ollama` or download from ollama.ai)
+- Ensure `.env` exists for your platform (copy from `.envexample`):
+  ```bash
+  cp platform/cachyos-i9-32gb-nvidia-4090/.envexample platform/cachyos-i9-32gb-nvidia-4090/.env
+  # Edit if needed: nano platform/cachyos-i9-32gb-nvidia-4090/.env
+  ```
 
 1. **Install systemd service** (auto-done by sod.sh):
    ```bash

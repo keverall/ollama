@@ -258,7 +258,7 @@ case "$PLATFORM" in
                     log INFO "Verify manually: sudo systemctl is-active ollama"
                     service_stopped=true  # Assume success, can't verify
                 elif command -v sudo &>/dev/null && [[ $EUID -ne 0 ]]; then
-                    if ! sudo systemctl is-active --quiet ollama 2>/dev/null; then
+                    if ! sudo -n systemctl is-active --quiet ollama 2>/dev/null; then
                         service_stopped=true
                     fi
                 else

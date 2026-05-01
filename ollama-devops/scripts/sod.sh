@@ -117,10 +117,11 @@ fi
 OLLAMA_HOST="${OLLAMA_HOST:-[::]:11434}"
 OLLAMA_PORT="${OLLAMA_PORT:-11434}"
 OLLAMA_BASE_URL="http://localhost:${OLLAMA_PORT}"
+[ -z "${DEVOPS_MODEL:-}" ] && DEVOPS_MODEL=""
 [ -z "${DEFAULT_MODELS:-}" ] && DEFAULT_MODELS=""
 [ -z "${OLLAMA_NUM_PARALLEL:-}" ] && OLLAMA_NUM_PARALLEL="24"
-\[ -z "${OLLAMA_MAX_LOADED_MODELS:-}" ] && OLLAMA_MAX_LOADED_MODELS="2"
-\[ -z "${QDRANT_PORT:-}" ] && QDRANT_PORT="6333"
+[ -z "${OLLAMA_MAX_LOADED_MODELS:-}" ] && OLLAMA_MAX_LOADED_MODELS="2"
+[ -z "${QDRANT_PORT:-}" ] && QDRANT_PORT="6333"
 
 # Resolve OLLAMA_BIN to absolute path if possible
 OLLAMA_BIN="${OLLAMA_BIN:-ollama}"
@@ -232,6 +233,24 @@ run_systemctl() {
         log WARN "sudo not available, skipping 'systemctl $cmd ${service:-}'"
         return 0
     fi
+}
+
+run_with_timeout() {
+    local timeout_sec="$1"
+    shift
+    if command -v timeout &>/dev/null; then
+        timeout "$timeout_sec" "$@"
+        return $?
+    fi
+    "$@" &
+    local child=$!
+    ( sleep "$timeout_sec" && kill -9 "$child" 2>/dev/null ) &
+    local timer_pid=$!
+    wait "$child" 2>/dev/null
+    local rc=$?
+    kill "$timer_pid" 2>/dev/null 2>&1
+    wait "$timer_pid" 2>/dev/null 2>&1
+    return $rc
 }
 
 # Wait for Ollama to be ready
@@ -425,24 +444,24 @@ if [[ "$DRY_RUN" != true ]]; then
         
         # Also kill any lingering Ollama processes
         log "Cleaning up stray Ollama processes..."
-        pgrep -f "ollama" 2>/dev/null | while read -r pid; do
-            if [[ "$pid" != "$SCRIPT_PID" ]]; then
-                if ! ps -p "$pid" -o args= 2>/dev/null | grep -q "sod\.sh"; then
-                    kill -TERM "$pid" 2>/dev/null || true
-                fi
-            fi
-        done
+         pgrep -f "ollama" 2>/dev/null | while read -r pid; do
+             if [[ "$pid" != "$SCRIPT_PID" ]]; then
+                 if ! ps -p "$pid" -o args= 2>/dev/null | grep -q "sod\.sh"; then
+                     kill -TERM "$pid" 2>/dev/null || true
+                 fi
+             fi
+         done || true
         sleep 2
         
         # Force kill any remaining
         log "Sending SIGKILL to remaining Ollama processes..."
-        pgrep -f "ollama" 2>/dev/null | while read -r pid; do
-            if [[ "$pid" != "$SCRIPT_PID" ]]; then
-                if ! ps -p "$pid" -o args= 2>/dev/null | grep -q "sod\.sh"; then
-                    kill -9 "$pid" 2>/dev/null || true
-                fi
-            fi
-        done
+         pgrep -f "ollama" 2>/dev/null | while read -r pid; do
+             if [[ "$pid" != "$SCRIPT_PID" ]]; then
+                 if ! ps -p "$pid" -o args= 2>/dev/null | grep -q "sod\.sh"; then
+                     kill -9 "$pid" 2>/dev/null || true
+                 fi
+             fi
+         done || true
         ;;
     esac
     log "✅ Previous Ollama instances stopped."
@@ -479,17 +498,17 @@ if [[ "$DRY_RUN" != true ]]; then
         log "OLLAMA_MODELS directory: ${OLLAMA_MODELS}"
         if [[ ! -d "${OLLAMA_MODELS}" ]]; then
             log "  Creating directory: ${OLLAMA_MODELS}"
-            if ! sudo mkdir -p "${OLLAMA_MODELS}" 2>/dev/null; then
+            if ! sudo -n mkdir -p "${OLLAMA_MODELS}" 2>/dev/null; then
                 log "  ⚠️  Failed to create ${OLLAMA_MODELS} (permission issue?)"
             fi
         fi
         # Make it world-writable to allow both 'ollama' service user and current user to write
         # (Acceptable for single-user dev environment)
         if [[ -d "${OLLAMA_MODELS}" ]]; then
-            sudo chmod 777 "${OLLAMA_MODELS}" 2>/dev/null || true
+            sudo -n chmod a+rwx "${OLLAMA_MODELS}" 2>/dev/null || true
             # Also ensure the full path is accessible
             for parent in "${OLLAMA_MODELS}" "${OLLAMA_MODELS%/*}" "${OLLAMA_MODELS%/*/*}"; do
-                [[ -d "$parent" ]] && sudo chmod 755 "$parent" 2>/dev/null || true
+                [[ -d "$parent" ]] && sudo -n chmod 755 "$parent" 2>/dev/null || true
             done
             log "  Set permissions: world-writable (shared access)"
         fi
@@ -506,8 +525,7 @@ if [[ "$DRY_RUN" != true ]]; then
             
             # Check for systemctl availability
             if ! check_command systemctl; then
-                log "❌ systemctl not found. Cannot manage Ollama service on Linux."
-                exit 1
+                log "⚠️  systemctl not found. Skipping systemd management; will use direct start fallback."
             fi
             
             # Install/update systemd service file if needed
@@ -531,16 +549,14 @@ if [[ "$DRY_RUN" != true ]]; then
                 if [[ "$need_install" == true ]]; then
                     log "Copying $SCRIPT_SYSTEMD_SERVICE to $SYSTEM_SYSTEMD_SERVICE"
                     if command -v sudo &>/dev/null && [[ $EUID -ne 0 ]]; then
-                        if ! sudo cp "$SCRIPT_SYSTEMD_SERVICE" "$SYSTEM_SYSTEMD_SERVICE" 2>&1 | tee -a "${LOG_FILE}"; then
-                            log "❌ Failed to install systemd service file (permission denied)"
-                            log "   Run: sudo cp $SCRIPT_SYSTEMD_SERVICE $SYSTEM_SYSTEMD_SERVICE"
-                            exit 1
+                        if ! sudo -n cp "$SCRIPT_SYSTEMD_SERVICE" "$SYSTEM_SYSTEMD_SERVICE" 2>&1 | tee -a "${LOG_FILE}"; then
+                            log "⚠️  Failed to install systemd service file (permission denied). Skipping systemd management."
+                            log "   Run manually: sudo cp $SCRIPT_SYSTEMD_SERVICE $SYSTEM_SYSTEMD_SERVICE"
                         fi
                     else
-                        cp "$SCRIPT_SYSTEMD_SERVICE" "$SYSTEM_SYSTEMD_SERVICE" 2>&1 | tee -a "${LOG_FILE}" || {
-                            log "❌ Failed to install systemd service file"
-                            exit 1
-                        }
+                        if ! cp "$SCRIPT_SYSTEMD_SERVICE" "$SYSTEM_SYSTEMD_SERVICE" 2>&1 | tee -a "${LOG_FILE}"; then
+                            log "⚠️  Failed to install systemd service file (permission denied). Skipping systemd management."
+                        fi
                     fi
                 fi
             else
@@ -841,7 +857,7 @@ if [[ "$DRY_RUN" != true ]]; then
             # Warm up the DevOps model on Mac
             if [[ -n "$DEVOPS_MODEL" ]] && "${OLLAMA_BIN}" list 2>/dev/null | grep -q "^${DEVOPS_MODEL}[[:space:]:]"; then
                 log "Warming up ${DEVOPS_MODEL}..."
-                if echo "hello" | timeout 60 "${OLLAMA_BIN}" run "$DEVOPS_MODEL" &>/dev/null; then
+                if echo "hello" | run_with_timeout 60 "${OLLAMA_BIN}" run "$DEVOPS_MODEL" &>/dev/null; then
                     log "  ✅ ${DEVOPS_MODEL} preloaded and ready."
                 else
                     log "  ⚠️  ${DEVOPS_MODEL} preload timed out or failed."
@@ -859,7 +875,7 @@ if [[ "$DRY_RUN" != true ]]; then
                      else
                          WARMUP_TIMEOUT=120  # 2 minutes for 7B model
                      fi
-                     if echo "Hello" | timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | tee -a "${LOG_FILE}"; then
+                      if echo "Hello" | run_with_timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | tee -a "${LOG_FILE}"; then
                          log "  ✅ ${warm_model} warmed up and ready."
                      else
                          log "  ⚠️  ${warm_model} warmup timed out or failed after ${WARMUP_TIMEOUT}s."

@@ -46,16 +46,19 @@ teardown() {
 
 @test "sod.sh: Verifies Ollama readiness" {
     run "$PROJECT_ROOT/scripts/sod.sh"
-    ACTUAL_LOG=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "Ollama is running" "$ACTUAL_LOG"
+    ACTUAL_LOG=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
+    [ -n "$ACTUAL_LOG" ]
+    # wait_for_ollama logs "Ollama is ready" on success
+    grep -q "Ollama is ready" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Checks models" {
     run "$PROJECT_ROOT/scripts/sod.sh"
-    ACTUAL_LOG=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]
-    grep -q "📦 Phase 4: Checking models" "$ACTUAL_LOG"
+    ACTUAL_LOG=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
+    # Phase 4 ensures models are present
+    grep -q "📦 Phase 4: Ensuring models" "$ACTUAL_LOG"
 }
 
 @test "sod.sh: Starts Qdrant via docker-compose" {

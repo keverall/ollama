@@ -25,3 +25,4 @@ OLLAMA_MODELS="/home/ollama/models"
 # Qdrant
 QDRANT_PORT="6333"
 QDRANT_GRPC_PORT="6334"
+

@@ -32,6 +32,9 @@ logs/
 .env.local
 .env.*.local
 
+# Platform-specific environment files (gitignored; copy .envexample to .env)
+/ollama-devops/platform/*/.env
+
 # YAML configuration & lint files
 .yaml
 .yml

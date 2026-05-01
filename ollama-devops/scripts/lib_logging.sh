@@ -9,6 +9,7 @@
 # Version:          1.0.0
 # Requirements:     bash 4+, tee command
 #============================================================================
+set -euo pipefail
 
 # Prevent double-sourcing
 if [[ -n "${_LIB_LOGGING_SOURCED:-}" ]]; then
@@ -24,13 +25,16 @@ _LIB_LOGGING_SOURCED=1
 : "${LOG_LEVEL:-INFO}"
 
 # Log level precedence (higher number = more critical)
-declare -A LOG_LEVEL_PRIORITY=(
-    [DEBUG]=1
-    [INFO]=2
-    [WARN]=3
-    [ERROR]=4
-    [SUCCESS]=2
-)
+log_level_priority() {
+    case "$1" in
+        DEBUG)   echo 1 ;;
+        INFO)    echo 2 ;;
+        SUCCESS) echo 2 ;;
+        WARN)    echo 3 ;;
+        ERROR)   echo 4 ;;
+        *)       echo 0 ;;
+    esac
+}
 
 # Emoji mapping for log levels
 log_emoji() {
@@ -138,9 +142,13 @@ log() {
     fi
 
     # Check log level filter
-    if [[ -n "${LOG_LEVEL_FILTER:-}" ]] && \
-       [[ "${LOG_LEVEL_PRIORITY[$level]:-0}" -lt "${LOG_LEVEL_PRIORITY[$LOG_LEVEL_FILTER]:-0}" ]]; then
-        return 0
+    if [[ -n "${LOG_LEVEL_FILTER:-}" ]]; then
+        local level_pri filter_pri
+        level_pri=$(log_level_priority "$level")
+        filter_pri=$(log_level_priority "$LOG_LEVEL_FILTER")
+        if [[ "$level_pri" -lt "$filter_pri" ]]; then
+            return 0
+        fi
     fi
 
     local timestamp
