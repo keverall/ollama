@@ -44,9 +44,9 @@ export PROJECT_ROOT
 # Change to project root so bashcov writes coverage/ there (not tests/coverage/)
 cd "$PROJECT_ROOT"
 
-# Run the full test suite (unit, integration, smoke) under bashcov
-# Use --root to mark project root, and -- to pass args to the test runner
-COVERAGE_DIR="$COVERAGE_DIR" bashcov --root "$PROJECT_ROOT" -- "$PROJECT_ROOT/tests/run_all.sh" "$@" 2>&1 | tee -a "${LOG_FILE}" || true
+# Run the full test suite (unit, integration, smoke, lint) under bashcov
+# Use --all to include integration tests which exercise the real scripts
+COVERAGE_DIR="$COVERAGE_DIR" bashcov --root "$PROJECT_ROOT" -- "$PROJECT_ROOT/tests/run_all.sh" --all "$@" 2>&1 | tee -a "${LOG_FILE}" || true
 
 log ""
 log "Coverage report generated at: $COVERAGE_DIR/index.html"

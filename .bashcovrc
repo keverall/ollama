@@ -5,3 +5,12 @@ exclude:
   - "*_test.sh"
   - "tests/**"
   - "ollama-devops/tests/**"
+
+# Map temp-executed scripts back to real source files
+# BATS tests copy minimal mocks to temp dirs (e.g., /tmp/*/scriptdir/sod.sh)
+# These files are deleted after test run, causing coverage loss.
+# This mapping redirects their coverage to the actual source locations.
+source:
+  - "/tmp/*/scriptdir/*" => "scripts/"
+  - "/tmp/*/initialisation/*" => "scripts/initialisation/"
+  - "/tmp/bats-*/**/*.sh" => "scripts/"
