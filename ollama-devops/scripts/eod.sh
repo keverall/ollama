@@ -132,7 +132,7 @@ check_passwordless_sudo() {
     # Passwordless sudo not configured - warn but don't block
     log WARN "Passwordless sudo not configured for systemctl commands"
     log WARN "Service operations will be skipped unless run as root"
-    log WARN "Run: sudo $SCRIPT_DIR/setup_passwordless_sudo.sh"
+    log WARN "Run: sudo $SCRIPT_DIR/initialisation/setup_passwordless_sudo.sh"
     log WARN "Or run this script as root: sudo $0"
     return 1  # Return non-zero to indicate issue
 }
@@ -258,7 +258,7 @@ case "$PLATFORM" in
                     log INFO "Verify manually: sudo systemctl is-active ollama"
                     service_stopped=true  # Assume success, can't verify
                 elif command -v sudo &>/dev/null && [[ $EUID -ne 0 ]]; then
-                    if ! sudo systemctl is-active --quiet ollama 2>/dev/null; then
+                    if ! sudo -n systemctl is-active --quiet ollama 2>/dev/null; then
                         service_stopped=true
                     fi
                 else

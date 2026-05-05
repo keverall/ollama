@@ -161,61 +161,61 @@ Scripts load platform-specific `.env` files:
    - Stops Ollama service (systemctl on Linux, process kill on macOS)
    - Cleans up resources
 
-## Environment Variables
+## Cost & Performance Rationale
 
-Key environment variables used throughout the system:
+### Why Run LLMs Locally?
 
-**Platform Configuration:**
-- `PLATFORM_OVERRIDE`: Manual platform override (`auto`, `macos`, `cachyos`, `linux`)
+Cloud LLM APIs charge per token:
+- **GPT-4**: ~$30–$60 per million output tokens
+- **Claude 3.5 Sonnet**: ~$15 per million output tokens
+- **Ollama local**: $0 per token after initial download
 
-**Ollama Configuration:**
-- `OLLAMA_HOST`: Host interface for Ollama (default: `[::]:11434` for dual-stack)
-- `OLLAMA_PORT`: Port for Ollama API (default: `11434`)
-- `OLLAMA_BIN`: Path to Ollama binary (default: `ollama`)
+For teams processing 10M tokens/month:
+- Cloud cost: $150–$600/month
+- One-time RTX 4090 hardware: ~$2000
+- Payback period: 4–12 months
 
-**Performance Tuning:**
-- `OLLAMA_NUM_PARALLEL`: Number of parallel workers (default: `24`)
-- `OLLAMA_MAX_LOADED_MODELS`: Max models in memory (default: `2`)
-- `OLLAMA_FLASH_ATTENTION`: MacBook GPU optimization (default: `1`)
-- `OLLAMA_KV_CACHE_TYPE`: MacBook memory optimization (default: `q4_0`)
-- `OLLAMA_GPU_LAYERS`: CachyOS GPU offloading (default: `50`)
+### Hardware Performance Targets
 
-**Storage Configuration:**
-- `OLLAMA_MODELS`: Custom model storage path (CachyOS: `/home/ollama/models`)
+| Hardware | Model | Layers Offloaded | VRAM Used | Throughput | Latency |
+|---|---|---|---|---|---|
+| RTX 4090 24GB | qwen2.5:7b (full) | All | ~6 GB | ~150 tok/s | ~50 ms/tok |
+| RTX 4090 24GB | qwen2.5-coder:32b-gpu | 50 / 80 | ~22 GB | ~80 tok/s | ~100 ms/tok |
+| MacBook M4 Pro 24GB | qwen2.5-coder:14b | N/A (unified) | ~10 GB* | ~40 tok/s | ~300 ms/tok |
 
-**Model Configuration:**
-- `DEFAULT_MODELS`: Comma-separated model list (platform-specific defaults)
-- `DEVOPS_MODEL`: Custom DevOps model name (MacBook only)
+*Unified memory shared between CPU+GPU; flash attention reduces footprint.
 
-**Qdrant Configuration:**
-- `QDRANT_PORT`: Port for Qdrant HTTP API (default: `6333`)
-- `QDRANT_GRPC_PORT`: Port for Qdrant gRPC API (default: `6334`)
+### Model Selection Strategy
 
-## Security Considerations
+- **CachyOS**: Uses GPU-optimized modfiles that offload as many layers as fit in 24GB VRAM (typically 50 out of 80 layers for 32B models; full GPU for 7B). This maximizes throughput while staying within VRAM budget.
+- **MacBook**: Uses flash attention and KV cache quantization to fit 14B models within 24GB unified memory with acceptable quality.
 
-- Services bind to all interfaces (`0.0.0.0` or `::`) for accessibility
-- No authentication enabled by default (suitable for local/dev environments)
-- For production, consider:
-  - Reverse proxy with authentication
-  - Firewall rules to limit access
-  - API keys or token-based authentication
-  - TLS encryption for API endpoints
+Warm-up (`sod.sh` Phase 5) loads models once so subsequent requests are fast. Cost is amortized across many queries.
 
-## Scalability
+## Environment File Setup
 
-- **Vertical Scaling**: Increase GPU/VRAM for larger models
-- **Horizontal Scaling**: Multiple instances behind load balancer
-- **Model Parallelism**: Distribute large models across multiple GPUs
-- **Caching Layers**: Add Redis or similar for frequent query caching
+Platform-specific `.env` files are **gitignored** (they may contain local paths). When cloning or re-provisioning a machine:
 
-## Maintenance
+1. Copy the template to create your local config:
+   ```bash
+   cp platform/macbook-m4-24gb-optimized/.envexample platform/macbook-m4-24gb-optimized/.env
+   cp platform/cachyos-i9-32gb-nvidia-4090/.envexample platform/cachyos-i9-32gb-nvidia-4090/.env
+   ```
 
-- Regular updates to Ollama, Docker, and NVIDIA drivers (CachyOS)
-- Monitor disk usage for vector storage growth
-- Periodic log rotation and cleanup
-- Backup strategies for persistent storage (Qdrant data)
+2. Edit `.env` files to match your installation paths:
+   - `OLLAMA_BIN`: Path to `ollama` binary (run `which ollama` to find)
+   - `OLLAMA_MODELS`: Directory for model storage (ensure ≥100GB free for 32B models)
+   - `OLLAMA_HOST`/`PORT`: Network binding (defaults are safe for local dev)
 
-## Cross-Platform Compatibility
+3. For CachyOS, also ensure `$OLLAMA_MODELS` exists and is writeable by your user:
+   ```bash
+   sudo mkdir -p /home/ollama/models
+   sudo chown $USER:$USER /home/ollama/models
+   ```
+
+See platform-specific READMEs (`platform/*/README.md`) for full variable explanations.
+
+## Platform Architecture Differences
 
 The unified scripts (`sod.sh`, `eod.sh`) abstract away platform differences:
 
@@ -228,6 +228,15 @@ The unified scripts (`sod.sh`, `eod.sh`) abstract away platform differences:
 | **Service type**       | No system-level service       | systemd-managed, auto-restart    |
 | **Logs**               | File-based (`logs/`)          | journald + file logs             |
 | **Platform detection** | Automatic (Darwin)            | Automatic (CachyOS/Arch)         |
+
+### Bash Compatibility
+
+Scripts are designed to run on both **macOS (bash 3.2)** and modern Linux (bash ≥5):
+
+- **No associative arrays**: `lib_logging.sh` uses function-based lookup (`log_level_priority()`) instead of `declare -A` (unsupported in bash 3.2)
+- **Portable timeout**: `sod.sh` includes `run_with_timeout()` fallback for systems without GNU `timeout` (macOS)
+- **Strict mode**: All scripts use `set -euo pipefail`; variables are defaulted to avoid unbound errors with `set -u`
+- **ShellCheck compliance**: Linting uses `-x` flag to follow includes and catch portability issues
 
 ## Future Extensibility
 

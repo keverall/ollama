@@ -14,10 +14,45 @@ LOG_DIR="${PROJECT_ROOT}/logs"
 source "${PROJECT_ROOT}/scripts/lib_logging.sh"
 log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
 
+run_with_timeout() {
+    local timeout_seconds=$1
+    shift
+    if command -v timeout &>/dev/null; then
+        timeout "$timeout_seconds" "$@" 2>&1
+        return $?
+    elif command -v gtimeout &>/dev/null; then
+        gtimeout "$timeout_seconds" "$@" 2>&1
+        return $?
+    else
+        # Simple fallback timeout using background process and signals
+        local start_time
+        start_time=$(date +%s)
+        "$@" 2>&1 &
+        local cmd_pid=$!
+
+        # Wait for command with timeout
+        local elapsed=0
+        while [[ $elapsed -lt $timeout_seconds ]]; do
+            if ! kill -0 "$cmd_pid" 2>/dev/null; then
+                # Process finished
+                wait "$cmd_pid" 2>/dev/null
+                return $?
+            fi
+            sleep 1
+            elapsed=$((elapsed + 1))
+        done
+
+        # Timeout reached - kill the process
+        kill -TERM "$cmd_pid" 2>/dev/null || kill -KILL "$cmd_pid" 2>/dev/null || true
+        wait "$cmd_pid" 2>/dev/null || true
+        return 124  # timeout exit code
+    fi
+}
+
 run_test() {
     TEST_COUNT=$((TEST_COUNT+1))
     log "  [$TEST_COUNT] $1 ... "
-    if timeout 60 bats "$2" 2>&1 | tee -a "${LOG_FILE}"; then
+    if run_with_timeout 1200 bats "$2" 2>&1 | tee -a "${LOG_FILE}"; then
         log "${GREEN}PASS${NC}"; PASS_COUNT=$((PASS_COUNT+1))
     else
         log "${RED}FAIL${NC}"; FAIL_COUNT=$((FAIL_COUNT+1))

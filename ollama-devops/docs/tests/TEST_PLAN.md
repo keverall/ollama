@@ -167,7 +167,7 @@ This test plan follows DevOps principles with a **shift-left** approach, testing
 
 - **Pass rate:** 100% of tests must pass for production deployment
 - **Critical tests:** All E2E tests must pass
-- **Code coverage:** >80% line coverage (measured by kcov or similar)
+- **Code coverage:** >80% line coverage (measured by bashcov; only production scripts)
 - **Shellcheck:** Zero warnings/errors
 - **Security scan:** No high/critical vulnerabilities (Gitleaks, Trivy)
 - **Performance:** Startup time < 60s on reference hardware (RTX 4090)
@@ -191,8 +191,8 @@ jobs:
     steps:
       - checkout
       - setup-bats
-      - run: make test-all
-      - run: make test-coverage
+       - run: make test-all
+       - run: make coverage
 ```
 
 ### Nightly (Scheduled)
@@ -203,7 +203,7 @@ jobs:
 ## Test Reporting
 
 - **JUnit XML** for CI integration
-- **HTML coverage reports**
+- **HTML coverage reports** (`ollama-devops/coverage/index.html` — production scripts only)
 - **Log aggregation** for failed runs
 - **Slack notifications** for test failures
 

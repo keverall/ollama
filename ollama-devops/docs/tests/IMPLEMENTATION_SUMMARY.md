@@ -313,7 +313,7 @@ make test-smoke
 make test-e2e
 make test-all      # Excludes E2E (unless --all flag)
 make lint          # Shellcheck + syntax
-make coverage      # kcov HTML report
+make coverage      # bashcov HTML report (production scripts only)
 make install-mocks # Setup mock binaries
 make clean         # Remove test artifacts
 ```
@@ -469,7 +469,7 @@ make clean
 - ✅ Mock infrastructure for offline testing
 - ✅ CI-ready with proper exit codes
 - ✅ Documentation complete (README, TEST_PLAN, SUMMARY)
-- ✅ Coverage reporting infrastructure (kcov)
+- ✅ Coverage reporting infrastructure (bashcov + SimpleCov)
 - ✅ Makefile automation
 - ✅ Pre-commit hookable
 

@@ -1,0 +1,50 @@
+#============================================================================
+# Platform Environment Template — MacBook M4 Pro 24GB
+# Copy this file to .env and customize for your system
+#============================================================================
+# Purpose: Configure Ollama for Apple Silicon unified memory
+#
+# After cloning, run:
+#   cp .envexample .env
+#   # Edit .env to match your Ollama installation path
+#
+# Variables control:
+#   - Model selection (which models to ensure at startup)
+#   - GPU optimizations (flash attention, KV cache)
+#   - Storage location (where model weights are stored)
+#   - Network binding (which interfaces Ollama listens on)
+#============================================================================
+
+# --- Model Configuration ---
+# Comma-separated list of models to ensure are present and ready
+# These will be pulled/created during sod.sh startup
+MODEL_LIST="nomic-embed-text,qwen2.5-coder:14b"
+
+# Custom DevOps model name (built from modfile-qwen-devops)
+DEVOPS_MODEL="qwen-devops"
+
+# --- Ollama Binary & Storage ---
+# Path to the ollama executable (find with: which ollama)
+OLLAMA_BIN="/usr/local/bin/ollama"
+
+# Where Ollama stores model weights (default: ~/.ollama/models)
+# Use absolute path; tilde expansion is NOT performed by sudo/systemd
+OLLAMA_MODELS="${HOME}/.ollama/models"
+
+# --- Network Configuration ---
+# Bind address for Ollama API (IPv6+IPv4 dual-stack recommended)
+OLLAMA_HOST="[::]:11434"
+OLLAMA_PORT="11434"  # Also exported separately for scripts
+
+# --- macOS-Specific Optimizations ---
+# Enable flash attention for M4 GPU (greatly reduces memory use)
+OLLAMA_FLASH_ATTENTION="1"
+
+# KV cache quantization for 24GB unified memory
+# Options: q4_0, q4_1, q5_0, q8_0 (lower = less memory, slight quality loss)
+OLLAMA_KV_CACHE_TYPE="q4_0"
+
+# --- Qdrant (Vector Database) ---
+# HTTP port for Qdrant API (used by RAG workflows)
+QDRANT_PORT="6333"
+QDRANT_GRPC_PORT="6334"

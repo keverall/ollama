@@ -30,12 +30,25 @@ Additionally:
 ### Cross-Platform Script Requirements
 
 When writing scripts that support multiple platforms:
+
 1. Detect platform early using `detect_platform()` from `lib_logging.sh`
 2. Set platform-specific paths and configuration based on detection
 3. Use `MODFILE_DIR` variable to reference platform modfiles
 4. Load platform-specific `.env` from `platform/<platform>/.env`
 5. Provide `PLATFORM_OVERRIDE` for manual platform specification
 6. Include graceful fallbacks for missing platform-specific features
+
+#### Bash Compatibility
+
+Scripts must be compatible with **bash 3.2** (macOS default) and modern bash (5.x):
+
+- **No associative arrays** (`declare -A`): Use `case` statements or functions for lookups
+- **Avoid `timeout` without fallback**: Provide portable alternatives (background kill) for macOS
+- **No `&>>` operator**: Use `>> file 2>&1` instead
+- **Test with `bash -n` and `shellcheck -x`**: Catch portability issues early
+- **Quote variable expansions**: Prevent word splitting and globbing issues
+
+See `lib_logging.sh` for an example of associative array replacement with `log_level_priority()` function.
 
 ## Configuration Files
 
@@ -177,7 +190,8 @@ ollama-devops/
 │   ├── sod.sh                       # Start of Day script
 │   ├── eod.sh                       # End of Day script
 │   ├── lib_logging.sh               # Shared logging library
-│   ├── setup_passwordless_sudo.sh   # Sudo configuration helper
+│   ├── initialisation/
+│   │   └── setup_passwordless_sudo.sh   # Sudo configuration helper
 │   └── .envexample                  # Configuration template
 ├── platform/                         # Platform-specific configurations
 │   ├── macbook-m4-24gb-optimized/

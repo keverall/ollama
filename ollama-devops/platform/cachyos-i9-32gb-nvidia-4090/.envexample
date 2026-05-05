@@ -1,0 +1,60 @@
+#============================================================================
+# Platform Environment Template — CachyOS i9 RTX 4090
+# Copy this file to .env and customize for your system
+#============================================================================
+# Purpose: Configure Ollama for NVIDIA GPU acceleration on Arch-derived Linux
+#
+# After cloning, run:
+#   cp .envexample .env
+#   # Edit .env if your OLLAMA_BIN path or model directory differs
+#
+# Variables control:
+#   - GPU layer offloading (how much of the model runs on GPU vs CPU)
+#   - Parallelism (workers, loaded models) tuned for 32GB RAM + 24GB VRAM
+#   - Model selection (32B GPU-optimized modfiles use CUDA)
+#   - Systemd env file generation (/etc/default/ollama)
+#============================================================================
+
+# --- Ollama Binary & Paths ---
+# Full path to ollama executable (find with: which ollama)
+OLLAMA_BIN="/usr/local/bin/ollama"
+
+# Network binding
+OLLAMA_HOST="[::]:11434"  # IPv6+IPv4 dual-stack
+OLLAMA_PORT="11434"
+
+# Where to store model weights (create this directory, writeable by your user)
+OLLAMA_MODELS="/home/ollama/models"
+# sudo mkdir -p "$OLLAMA_MODELS" && sudo chown $USER:$USER "$OLLAMA_MODELS"
+
+# --- Performance Tuning for RTX 4090 (24GB VRAM + 32GB RAM) ---
+# Parallel workers: match logical CPU cores (i9-13900KS = 24 threads)
+OLLAMA_NUM_PARALLEL="24"
+
+# Maximum simultaneous loaded models (GPU+system RAM budget)
+OLLAMA_MAX_LOADED_MODELS="2"
+
+# GPU layers offloaded: how many transformer layers run on GPU before CPU fallback
+# For 32B models on 24GB VRAM: 50 layers (~22GB used, remainder CPU)
+# Adjust based on your GPU VRAM (12GB → ~30 layers, 16GB → ~40 layers)
+OLLAMA_GPU_LAYERS="50"
+
+# Which GPU to use (for multi-GPU systems)
+CUDA_VISIBLE_DEVICES="0"
+
+# --- Model Configuration ---
+# Comma-separated list of models to ensure at startup
+# Models must have corresponding .modelfile in modfiles/ directory:
+#   qwen2.5-coder:32b-gpu → built from qwen2.5-coder:32b with 50 GPU layers
+#   qwen2.5:7b-instruct  → 7B model, full GPU fit (fastest)
+#   nomic-embed-text     → embedding model for RAG
+DEFAULT_MODELS="qwen2.5-coder:32b-gpu,qwen2.5:7b-instruct,nomic-embed-text:latest"
+
+# DevOps model (not used on CachyOS; MacBook only)
+DEVOPS_MODEL=""
+
+# --- Qdrant (Vector Database) ---
+# Used by RAG pipelines; started via docker-compose in sod.sh
+QDRANT_PORT="6333"
+QDRANT_GRPC_PORT="6334"
+
