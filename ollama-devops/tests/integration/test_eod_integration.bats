@@ -2,6 +2,13 @@
 # Integration tests for eod.sh with mocked dependencies
 
 setup() {
+    # Ensure PROJECT_ROOT is set for the tests before changing directory
+    if [[ -z "${PROJECT_ROOT:-}" ]]; then
+        # Hardcode the project root for test environment
+        PROJECT_ROOT="/Users/keveverall/vscode/ollama/ollama-devops"
+        export PROJECT_ROOT
+    fi
+
     TEST_TMPDIR="$(mktemp -d)"
     cd "$TEST_TMPDIR"
     mkdir -p logs

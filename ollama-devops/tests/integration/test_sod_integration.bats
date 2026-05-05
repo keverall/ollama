@@ -2,10 +2,47 @@
 # Integration tests for sod.sh with mocked dependencies
 
 setup() {
+    # Ensure PROJECT_ROOT is set for the tests before changing directory
+    if [[ -z "${PROJECT_ROOT:-}" ]]; then
+        # Hardcode the project root for test environment
+        PROJECT_ROOT="/Users/keveverall/vscode/ollama/ollama-devops"
+        export PROJECT_ROOT
+    fi
+
+    # Ensure mocks are in PATH for all tests
+    MOCKS_DIR="/Users/keveverall/vscode/ollama/ollama-devops/tests/mocks"
+    PATH="$MOCKS_DIR:$PATH"
+    export PATH
+
+    # Override OLLAMA_BIN to use mock instead of hardcoded path from .env
+    export OLLAMA_BIN="ollama"
+
+    # Enable test mode to exit after startup
+    export TEST_MODE=true
+
     TEST_TMPDIR="$(mktemp -d)"
     cd "$TEST_TMPDIR"
     mkdir -p logs modfiles
     export LOG_DIR="$PWD/logs"
+
+    # Create a test-specific .env that doesn't override OLLAMA_BIN
+    mkdir -p platform/macbook-m4-24gb-optimized
+    cat > platform/macbook-m4-24gb-optimized/.env << 'EOF'
+# Test environment - use mock binaries
+export MODEL_LIST="nomic-embed-text,qwen2.5-coder:14b"
+export DEVOPS_MODEL="qwen-devops"
+# OLLAMA_BIN not set here - let it use PATH resolution
+export OLLAMA_MODELS=~/.ollama/models/
+
+# Memory optimizations for M4 Pro 24GB
+export OLLAMA_FLASH_ATTENTION=1
+export OLLAMA_KV_CACHE_TYPE=q4_0
+
+export OLLAMA_HOST="[::]:11434" # Forces IPv6 + IPv4 dual-stack
+EOF
+    # Override PLATFORM_ENV_FILE to use the test .env
+    export PLATFORM_ENV_FILE="$PWD/platform/macbook-m4-24gb-optimized/.env"
+
     # Determine actual log file created by script (will be platform-specific)
     ACTUAL_LOG=""
 
@@ -17,7 +54,6 @@ teardown() {
 }
 
 @test "sod.sh: Validates ollama binary exists (should succeed with mock)" {
-    # Use real script, mocks are in PATH from runner
     run "$PROJECT_ROOT/scripts/sod.sh"
     ACTUAL_LOG=$(ls logs/*-sod-run.log 2>/dev/null | head -1)
     [ "$status" -eq 0 ]

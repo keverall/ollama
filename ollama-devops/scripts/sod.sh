@@ -123,7 +123,20 @@ OLLAMA_BASE_URL="http://localhost:${OLLAMA_PORT}"
 [ -z "${OLLAMA_MAX_LOADED_MODELS:-}" ] && OLLAMA_MAX_LOADED_MODELS="2"
 [ -z "${QDRANT_PORT:-}" ] && QDRANT_PORT="6333"
 
-# Resolve OLLAMA_BIN to absolute path if possible
+# Platform-specific Qdrant data directory (avoids Docker Desktop file sharing issues on macOS)
+case "$PLATFORM" in
+    macos)
+        [ -z "${QDRANT_DATA_DIR:-}" ] && QDRANT_DATA_DIR="${PROJECT_ROOT}/data/qdrant"
+        ;;
+    cachyos|linux)
+        [ -z "${QDRANT_DATA_DIR:-}" ] && QDRANT_DATA_DIR="${HOME}/.qdrant"
+        ;;
+    *)
+        [ -z "${QDRANT_DATA_DIR:-}" ] && QDRANT_DATA_DIR="${PROJECT_ROOT}/data/qdrant"
+        ;;
+esac
+
+# Resolve OLLAMA_BIN to absolute path if possible (AFTER .env loading to allow .env override)
 OLLAMA_BIN="${OLLAMA_BIN:-ollama}"
 if command -v "$OLLAMA_BIN" &>/dev/null; then
     OLLAMA_BIN="$(command -v "$OLLAMA_BIN")"
@@ -855,7 +868,7 @@ if [[ "$DRY_RUN" != true ]]; then
     case "$PLATFORM" in
         macos)
             # Warm up the DevOps model on Mac
-            if [[ -n "$DEVOPS_MODEL" ]] && "${OLLAMA_BIN}" list 2>/dev/null | grep -q "^${DEVOPS_MODEL}[[:space:]:]"; then
+            if [[ -n "$DEVOPS_MODEL" ]]; then
                 log "Warming up ${DEVOPS_MODEL}..."
                 if echo "hello" | run_with_timeout 60 "${OLLAMA_BIN}" run "$DEVOPS_MODEL" &>/dev/null; then
                     log "  ✅ ${DEVOPS_MODEL} preloaded and ready."
@@ -894,6 +907,17 @@ log ""
 log "🐳 Phase 6: Starting Qdrant..."
 
 if [[ "$DRY_RUN" != true ]] && check_command docker; then
+    # Ensure Qdrant data directory exists
+    if [[ -n "${QDRANT_DATA_DIR:-}" ]]; then
+        log "Qdrant data directory: ${QDRANT_DATA_DIR}"
+        if [[ ! -d "${QDRANT_DATA_DIR}" ]]; then
+            log "  Creating directory: ${QDRANT_DATA_DIR}"
+            mkdir -p "${QDRANT_DATA_DIR}" 2>/dev/null || {
+                log "  ⚠️  Failed to create ${QDRANT_DATA_DIR}"
+            }
+        fi
+    fi
+
     # Check common locations for docker-compose.yml
     DOCKER_COMPOSE_FILE=""
     if [[ -f "${PROJECT_ROOT}/docker-compose.yml" ]]; then
@@ -901,12 +925,14 @@ if [[ "$DRY_RUN" != true ]] && check_command docker; then
     elif [[ -f "${SCRIPT_DIR}/docker-compose.yml" ]]; then
         DOCKER_COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
     fi
-    
+
     if [[ -z "$DOCKER_COMPOSE_FILE" ]]; then
         log "⚠️  docker-compose.yml not found. Skipping Qdrant."
     else
         log "Starting Qdrant via docker-compose..."
         cd "${PROJECT_ROOT}" || exit 1
+        # Export QDRANT_DATA_DIR for docker-compose
+        export QDRANT_DATA_DIR
         if docker-compose -f "$DOCKER_COMPOSE_FILE" up -d 2>&1 | tee -a "${LOG_FILE}"; then
             log "✅ Qdrant containers started!"
             
@@ -961,5 +987,11 @@ log "  - Check API: curl http://localhost:${OLLAMA_PORT}/api/tags"
 log "  - View logs: tail -f ${OLLAMA_SERVER_LOG}"
 log "  - Stop environment: ./scripts/eod.sh"
 log ""
+
+# Exit immediately in test mode (don't wait for services)
+if [[ "${TEST_MODE:-false}" == "true" ]]; then
+    log "Test mode: exiting after startup"
+    exit 0
+fi
 
 exit 0
