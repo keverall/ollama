@@ -197,7 +197,7 @@ ollama-devops/
 │   ├── macbook-m4-24gb-optimized/
 │   │   ├── modfiles/                 # MacBook-specific modfiles
 │   │   │   ├── modfile-gemma4
-│   │   │   └── modfile-qwen-devops
+│   │   │   └── modfile-illama3-devops
 │   │   └── .env                      # MacBook-specific config
 │   └── cachyos-i9-32gb-nvidia-4090/
 │       ├── modfiles/                 # CachyOS-specific modfiles
@@ -286,4 +286,4 @@ ollama-devops/
 ---
 
 **Last Updated:** 2026-04-30  
-**Version:** 1.0.0
+**Version:** 2.0.0

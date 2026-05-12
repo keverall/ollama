@@ -502,5 +502,5 @@ make clean
 **Status:** Production Ready  
 **Built by:** Kilo (AI Assistant)  
 **Date:** 2026-04-30  
-**Version:** 1.0.0  
+**Version:** 2.0.0  
 **Compatible with:** Bats-core v1.5+, Bash 3.2+, Shellcheck 0.7+

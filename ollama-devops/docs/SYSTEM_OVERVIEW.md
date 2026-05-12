@@ -124,7 +124,7 @@ Scripts load platform-specific `.env` files:
 ### Model Management
 
 **MacBook** loads from `platform/macbook-m4-24gb-optimized/modfiles/`:
-- `modfile-qwen-devops` → builds `qwen-devops` custom model
+- `modfile-illama3-devops` → builds `qwen-devops` custom model
 
 **CachyOS** loads from `platform/cachyos-i9-32gb-nvidia-4090/modfiles/`:
 - `qwen2.5-coder:32b-gpu.modelfile` → `qwen2.5-coder:32b-gpu`
@@ -223,7 +223,7 @@ The unified scripts (`sod.sh`, `eod.sh`) abstract away platform differences:
 |------------------------|-------------------------------|----------------------------------|
 | **Ollama control**     | Direct process (`ollama &`)   | systemd service (`systemctl`)    |
 | **GPU acceleration**   | Metal via Ollama              | CUDA via NVIDIA drivers          |
-| **Modfiles**           | Custom `modfile-qwen-devops`  | GPU-optimized modfiles           |
+| **Modfiles**           | Custom `modfile-illama3-devops`  | GPU-optimized modfiles           |
 | **Memory tuning**      | Flash attention, KV cache     | GPU layers offloading            |
 | **Service type**       | No system-level service       | systemd-managed, auto-restart    |
 | **Logs**               | File-based (`logs/`)          | journald + file logs             |

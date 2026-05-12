@@ -19,7 +19,7 @@ run_with_timeout() {
     shift
     if command -v timeout &>/dev/null; then
         timeout "$timeout_seconds" "$@" 2>&1
-        return $?
+        return $?p
     elif command -v gtimeout &>/dev/null; then
         gtimeout "$timeout_seconds" "$@" 2>&1
         return $?

@@ -5,7 +5,7 @@
 #                   Supports macOS (MacBook) and Linux (CachyOS/Arch) with systemd
 # Author:           Keverall
 # Date:             2026-04-30
-# Version:          2.0.1
+# Version:          2.0.0
 # Usage:            ./scripts/eod.sh [--dry-run]
 # Requirements:     bash, docker, docker-compose (optional), systemctl (Linux)
 #                   passwordless sudo (recommended for Linux systemd operations)
@@ -186,11 +186,17 @@ fi
 if [[ -n "$DOCKER_COMPOSE_FILE" ]]; then
     cd "${PROJECT_ROOT}"
     # Try both v1 and v2 docker compose commands
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" down 2>/dev/null || docker compose -f "$DOCKER_COMPOSE_FILE" down 2>/dev/null; then
+    if docker-compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans 2>/dev/null || \
+       docker compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans 2>/dev/null; then
         log SUCCESS "Docker containers stopped."
     else
         log WARN "Docker compose down failed (containers may not be running)."
     fi
+
+    # Clean up stopped containers and dangling images to avoid conflicts on next start
+    log "Cleaning up unused Docker resources..."
+    docker container prune -f 2>/dev/null || true
+    docker image prune -f 2>/dev/null || true
 else
     log INFO "No docker-compose.yml found, skipping Docker cleanup."
 fi

@@ -41,7 +41,7 @@ Unlike x86 CPUs, Apple Silicon uses **unified memory** — both CPU and GPU shar
 ### Models
 
 **DEVOPS_MODEL: `qwen-devops`**
-- Built from `modfile-qwen-devops` (base: `qwen2.5-coder:14b`)
+- Built from `modfile-illama3-devops` (base: `qwen2.5-coder:14b`)
 - Fine-tuned for DevOps tasks (Terraform, K8s, Python, Go)
 - Optimized with flash attention → fits in ~12GB (leaves room for other apps)
 - Warm-up: ~30 seconds at startup (loaded into unified memory)

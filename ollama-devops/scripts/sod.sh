@@ -118,6 +118,7 @@ OLLAMA_HOST="${OLLAMA_HOST:-[::]:11434}"
 OLLAMA_PORT="${OLLAMA_PORT:-11434}"
 OLLAMA_BASE_URL="http://localhost:${OLLAMA_PORT}"
 [ -z "${DEVOPS_MODEL:-}" ] && DEVOPS_MODEL=""
+[ -z "${QUICK_MODEL:-}" ] && QUICK_MODEL=""
 [ -z "${DEFAULT_MODELS:-}" ] && DEFAULT_MODELS=""
 [ -z "${OLLAMA_NUM_PARALLEL:-}" ] && OLLAMA_NUM_PARALLEL="24"
 [ -z "${OLLAMA_MAX_LOADED_MODELS:-}" ] && OLLAMA_MAX_LOADED_MODELS="2"
@@ -769,11 +770,24 @@ ensure_model() {
         
         # Try to create from modfile (base model now guaranteed to exist if different)
         log "    Creating from modfile: $modfile_name"
-        if "${OLLAMA_BIN}" create "$model_name" -f "${MODFILE_DIR}/${modfile_name}" &>/dev/null; then
-            log "    ✅ $model_name created from modfile."
-            return 0
+        log "    Full modfile path: ${MODFILE_DIR}/${modfile_name}"
+        if [[ -f "${MODFILE_DIR}/${modfile_name}" ]]; then
+            # If model already exists and we're using a modfile, remove it first to allow recreation
+            if "${OLLAMA_BIN}" list 2>/dev/null | grep -q "^${model_name}[[:space:]:]"; then
+                log "    Model exists, removing before recreation..."
+                "${OLLAMA_BIN}" rm "$model_name" 2>&1 | tee -a "${LOG_FILE}" || log "    Warning: Failed to remove existing model"
+            fi
+            log "    Modfile exists, attempting create..."
+            if "${OLLAMA_BIN}" create "$model_name" -f "${MODFILE_DIR}/${modfile_name}" 2>&1 | tee -a "${LOG_FILE}"; then
+                log "    ✅ $model_name created from modfile."
+                return 0
+            else
+                log "    ❌ Failed to create from modfile (exit code: $?), trying pull..."
+            fi
         else
-            log "    ⚠️  Failed to create from modfile, trying pull..."
+            log "    ❌ Modfile not found at ${MODFILE_DIR}/${modfile_name}"
+            log "    Available modfiles in ${MODFILE_DIR}:"
+            ls -la "${MODFILE_DIR}/" 2>/dev/null | head -10 | while read -r line; do log "      $line"; done
         fi
     fi
     
@@ -797,7 +811,7 @@ get_modfile_for_model() {
         macos)
             # MacBook: Check if this is the custom DevOps model
             if [[ -n "$DEVOPS_MODEL" && "$model_name" == "$DEVOPS_MODEL" ]]; then
-                local candidates=("modfile-${DEVOPS_MODEL}" "modfile-qwen-devops" "modfile-gemma4")
+                local candidates=("modfile-${DEVOPS_MODEL}" "modfile-illama3-devops" "modfile-gemma4")
                 for candidate in "${candidates[@]}"; do
                     if [[ -f "${MODFILE_DIR}/${candidate}" ]]; then
                         echo "$candidate"
@@ -842,14 +856,43 @@ if [[ -n "$DEVOPS_MODEL" ]]; then
     for m in "${MODEL_ARRAY[@]}"; do
         [[ "$(echo "$m" | xargs)" == "$DEVOPS_MODEL" ]] && devops_already_handled=true && break
     done
-    
+
     if [[ "$devops_already_handled" == false ]]; then
         log "📦 Checking DevOps model: ${DEVOPS_MODEL}"
         modfile_name="$(get_modfile_for_model "$DEVOPS_MODEL" "$PLATFORM" || true)"
+        log "  Modfile candidate: ${modfile_name:-none} (looking in ${MODFILE_DIR})"
         if [[ -n "$modfile_name" ]]; then
             ensure_model "$DEVOPS_MODEL" "$modfile_name" || MODEL_CHECK_STATUS=1
         else
             log "  ⚠️  No modfile found for DEVOPS_MODEL='${DEVOPS_MODEL}'. Skipping."
+        fi
+    fi
+fi
+
+# Handle QUICK_MODEL if defined and not already in DEFAULT_MODELS
+if [[ -n "${QUICK_MODEL:-}" ]]; then
+    quick_already_handled=false
+    for m in "${MODEL_ARRAY[@]}"; do
+        [[ "$(echo "$m" | xargs)" == "$QUICK_MODEL" ]] && quick_already_handled=true && break
+    done
+
+    if [[ "$quick_already_handled" == false ]]; then
+        log "📦 Checking quick model: ${QUICK_MODEL}"
+        # Look for modfile-${QUICK_MODEL} or modfile-quick
+        quick_modfile=""
+        candidates=("modfile-${QUICK_MODEL}" "modfile-quick")
+        for candidate in "${candidates[@]}"; do
+            if [[ -f "${MODFILE_DIR}/${candidate}" ]]; then
+                quick_modfile="$candidate"
+                break
+            fi
+        done
+        
+        if [[ -n "$quick_modfile" ]]; then
+            log "  Using modfile: $quick_modfile"
+            ensure_model "$QUICK_MODEL" "$quick_modfile" || MODEL_CHECK_STATUS=1
+        else
+            log "  ⚠️  No modfile found for QUICK_MODEL='${QUICK_MODEL}'. Skipping."
         fi
     fi
 fi
@@ -874,6 +917,15 @@ if [[ "$DRY_RUN" != true ]]; then
                     log "  ✅ ${DEVOPS_MODEL} preloaded and ready."
                 else
                     log "  ⚠️  ${DEVOPS_MODEL} preload timed out or failed."
+                fi
+            fi
+            # Warm up the quick model if defined
+            if [[ -n "${QUICK_MODEL:-}" ]]; then
+                log "Warming up ${QUICK_MODEL}..."
+                if echo "ok" | run_with_timeout 30 "${OLLAMA_BIN}" run "$QUICK_MODEL" &>/dev/null; then
+                    log "  ✅ ${QUICK_MODEL} preloaded and ready."
+                else
+                    log "  ⚠️  ${QUICK_MODEL} preload timed out or failed."
                 fi
             fi
             ;;
