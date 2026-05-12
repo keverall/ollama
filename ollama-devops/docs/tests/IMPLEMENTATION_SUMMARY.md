@@ -313,7 +313,7 @@ make test-smoke
 make test-e2e
 make test-all      # Excludes E2E (unless --all flag)
 make lint          # Shellcheck + syntax
-make coverage      # kcov HTML report
+make coverage      # bashcov HTML report (production scripts only)
 make install-mocks # Setup mock binaries
 make clean         # Remove test artifacts
 ```
@@ -469,7 +469,7 @@ make clean
 - ✅ Mock infrastructure for offline testing
 - ✅ CI-ready with proper exit codes
 - ✅ Documentation complete (README, TEST_PLAN, SUMMARY)
-- ✅ Coverage reporting infrastructure (kcov)
+- ✅ Coverage reporting infrastructure (bashcov + SimpleCov)
 - ✅ Makefile automation
 - ✅ Pre-commit hookable
 
@@ -502,5 +502,5 @@ make clean
 **Status:** Production Ready  
 **Built by:** Kilo (AI Assistant)  
 **Date:** 2026-04-30  
-**Version:** 1.0.0  
+**Version:** 2.0.0  
 **Compatible with:** Bats-core v1.5+, Bash 3.2+, Shellcheck 0.7+

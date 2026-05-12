@@ -19,7 +19,8 @@ help:
 	@echo "  clean          - Clean test artifacts"
 
 # Directories
-TEST_DIR := tests
+PROJECT_DIR := ollama-devops
+TEST_DIR := $(PROJECT_DIR)/tests
 BATS_DIR := $(TEST_DIR)/_bats_lib
 UNIT_DIR := $(TEST_DIR)/unit
 INT_DIR := $(TEST_DIR)/integration
@@ -29,8 +30,8 @@ FIXTURES_DIR := $(TEST_DIR)/fixtures
 MOCKS_DIR := $(TEST_DIR)/mocks
 
 # Script under test
-SOD_SCRIPT := scripts/sod.sh
-EOD_SCRIPT := scripts/eod.sh
+SOD_SCRIPT := $(PROJECT_DIR)/scripts/sod.sh
+EOD_SCRIPT := $(PROJECT_DIR)/scripts/eod.sh
 
 # ===============================
 # Unit Tests
@@ -91,9 +92,8 @@ lint:
 # ===============================
 coverage:
 	@echo "Generating coverage report..."
-	@# Use kcov or similar for bash coverage
-	@kcov --include-path=scripts/ tests/coverage/ bats tests/
-	@echo "Coverage report generated at tests/coverage/index.html"
+	@$(PROJECT_DIR)/tests/run_coverage.sh
+	@echo "Coverage report generated at $(PROJECT_DIR)/coverage/index.html"
 
 # ===============================
 # Install mocks for offline testing
@@ -108,7 +108,8 @@ install-mocks:
 # ===============================
 clean:
 	@echo "Cleaning test artifacts..."
-	rm -rf tests/logs/*
-	rm -rf tests/coverage/*
-	rm -rf tests/tmp/*
+	rm -rf $(TEST_DIR)/logs/*
+	rm -rf $(TEST_DIR)/coverage/*
+	rm -rf $(TEST_DIR)/tmp/*
+	rm -rf $(PROJECT_DIR)/coverage
 	@echo "✅ Clean complete"

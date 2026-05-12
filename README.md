@@ -4,7 +4,7 @@ A comprehensive project for managing and deploying Ollama AI models with DevOps 
 
 ## Repository Structure
 
-```text
+```
 .
 ├── ollama-devops/                   # Main unified project (active development)
 │   ├── platform/                    # Platform-specific configurations
@@ -16,7 +16,6 @@ A comprehensive project for managing and deploying Ollama AI models with DevOps 
 │   ├── systemd/                     # systemd service definitions (Linux)
 │   ├── docker-compose.yml           # Qdrant vector database
 │   ├── Makefile                     # Build automation
-│   ├── .envexample                  # Environment template
 │   └── README.md                    # Project documentation
 └── logs/                            # Runtime logs (created at runtime)
 ```

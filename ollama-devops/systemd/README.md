@@ -1,8 +1,8 @@
 # Systemd Service Files
 
-This directory contains systemd service definitions for Ollama. `sod.sh` automatically installs and configures these on Linux.
+This directory contains systemd service definitions for Ollama. `sod.sh` automatically installs and configures these on **Linux** (CachyOS/Arch). On **macOS**, scripts use direct process management and do not use systemd.
 
-## Files
+## Cross-Platform Note
 
 - `ollama.service` - Main service unit (installed to `/etc/systemd/system/`)
 - `platform-overrides/` - Drop-in overrides for specific platforms (optional)

@@ -19,7 +19,7 @@ A comprehensive, DevOps-standard test infrastructure has been built for the olla
 - Test utilities library (assertions, helpers)
 - Bats test configuration
 - Linting with shellcheck
-- Coverage reporting (kcov)
+- Coverage reporting (bashcov + SimpleCov)
 - CI/CD hooks ready (pre-commit, GitHub Actions)
 
 ---
@@ -56,8 +56,15 @@ TEST_MOCK_ollama=always-fail ./scripts/sod.sh   # simulate failures
 
 ### Generate Coverage Report
 ```bash
-./tests/run_coverage.sh
-# opens tests/coverage/index.html
+# From project root (recommended)
+make coverage
+
+# Or directly
+cd ollama-devops && ./tests/run_coverage.sh
+
+# Output: ollama-devops/coverage/index.html
+# Measures: Only production scripts (scripts/*.sh)
+# Excludes: tests/, mocks/, fixtures/
 ```
 
 ---
