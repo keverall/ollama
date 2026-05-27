@@ -17,7 +17,7 @@ run_test() { TEST_COUNT=$((TEST_COUNT+1)); log "  [$TEST_COUNT] $1 ... "; if bat
 
 export TEST_TMPDIR="$(mktemp -d)"
 export BATSLIB_TIMEOUT_MULTIPLIER="${BATSLIB_TIMEOUT_MULTIPLIER:-2}"
-log "=========================================="; log "  ollama-devops Unit Test Suite"; log "=========================================="; log ""
+log "=========================================="; log "  Unit Test Suite"; log "=========================================="; log ""
 for test_file in $(ls "$SCRIPT_DIR/unit"/*.bats 2>/dev/null | sort); do run_test "$(basename "$test_file" .bats)" "$test_file"; done
 log ""; log "=========================================="; log "  Results: $PASS_COUNT/$TEST_COUNT passed"; log "=========================================="
 [ $FAIL_COUNT -eq 0 ] && exit 0 || exit 1

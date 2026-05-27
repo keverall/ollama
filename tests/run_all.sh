@@ -45,7 +45,7 @@ ERRORS=0
 export PROJECT_ROOT
 
 log "=========================================="
-log "  ollama-devops Full Test Suite"
+log "  Full Test Suite"
 log "=========================================="
 log "Project root: $PROJECT_ROOT"
 log ""

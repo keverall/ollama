@@ -40,7 +40,7 @@ done
 : "${QUICK}"
 
 log "=========================================="
-log "  ollama-devops Test Environment Setup"
+log "  Test Environment Setup"
 log "=========================================="
 log ""
 
@@ -136,9 +136,9 @@ fi
 
 log ""
 log "Quick start:"
-log "  1. Run lint:   ./ollama-devops/tests/run_all.sh --lint"
-log "  2. Run unit:   ./ollama-devops/tests/run_all.sh --unit"
-log "  3. Run all:    ./ollama-devops/tests/run_all.sh"
+log "  1. Run lint:   ./tests/run_all.sh --lint"
+log "  2. Run unit:   ./tests/run_all.sh --unit"
+log "  3. Run all:    ./tests/run_all.sh"
 log ""
 log "For E2E tests (full hardware), run separately:"
-log "  ./ollama-devops/tests/e2e/run_all.sh"
+log "  ./tests/e2e/run_all.sh"
