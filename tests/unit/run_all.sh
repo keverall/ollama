@@ -12,6 +12,7 @@ LOG_DIR="${PROJECT_ROOT}/logs"
 # shellcheck disable=SC1091
 source "${PROJECT_ROOT}/scripts/lib_logging.sh"
 log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
+log_prune
 
 run_test() { TEST_COUNT=$((TEST_COUNT+1)); log "  [$TEST_COUNT] $1 ... "; if bats "$2" 2>&1 | tee -a "${LOG_FILE}"; then log "${GREEN}PASS${NC}"; PASS_COUNT=$((PASS_COUNT+1)); else log "${RED}FAIL${NC}"; FAIL_COUNT=$((FAIL_COUNT+1)); fi; }
 

@@ -216,5 +216,66 @@ log_grep() {
     fi
 }
 
+#----------------------------------------------------------------------------
+# Log Pruning
+#----------------------------------------------------------------------------
+# Remove oversized logs and enforce retention limit.
+# Configurable via environment:
+#   LOG_PRUNE_MAX_SIZE  - Maximum file size in bytes (default: 1048576 = 1MB)
+#   LOG_PRUNE_RETAIN    - Number of recent logs to keep (default: 10)
+#
+# Qdrant payload limit is ~256KB per point; files above LOG_PRUNE_MAX_SIZE
+# cannot be reliably indexed and are removed.
+log_prune() {
+    local log_dir="${LOG_DIR:-}"
+    if [[ -z "$log_dir" || ! -d "$log_dir" ]]; then
+        return 0
+    fi
+
+    local max_size="${LOG_PRUNE_MAX_SIZE:-1048576}"
+    local retain="${LOG_PRUNE_RETAIN:-10}"
+    local removed=0
+
+    local all_logs=()
+    while IFS= read -r -d '' f; do
+        all_logs+=("$f")
+    done < <(find "$log_dir" -maxdepth 1 -name "*.log" -type f -print0 2>/dev/null | sort -z)
+
+    if [[ ${#all_logs[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    for f in "${all_logs[@]}"; do
+        [[ "$f" == "${LOG_FILE:-}" ]] && continue
+        local size
+        size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo 0)
+        if [[ "$size" -gt "$max_size" ]]; then
+            rm -f "$f"
+            log INFO "Pruned oversized log: $(basename "$f") (${size} bytes > ${max_size})" "🧹 "
+            removed=$((removed + 1))
+        fi
+    done
+
+    local remaining=()
+    while IFS= read -r -d '' f; do
+        remaining+=("$f")
+    done < <(find "$log_dir" -maxdepth 1 -name "*.log" -type f -print0 2>/dev/null | sort -z)
+
+    if [[ ${#remaining[@]} -gt "$retain" ]]; then
+        local excess=$(( ${#remaining[@]} - retain ))
+        local oldest=("${remaining[@]:0:$excess}")
+        for f in "${oldest[@]}"; do
+            [[ "$f" == "${LOG_FILE:-}" ]] && continue
+            rm -f "$f"
+            log INFO "Pruned old log: $(basename "$f")" "🧹 "
+            removed=$((removed + 1))
+        done
+    fi
+
+    if [[ "$removed" -gt 0 ]]; then
+        log INFO "Log pruning complete: removed ${removed} file(s), kept newest ${retain}" "🧹 "
+    fi
+}
+
 # Export log file path for external tools
 export LOG_FILE

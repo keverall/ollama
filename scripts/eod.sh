@@ -332,4 +332,6 @@ log SUCCESS "Environment shutdown complete."
 log INFO "=== End of Day Complete ==="
 log INFO "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
 
+log_prune
+
 exit 0

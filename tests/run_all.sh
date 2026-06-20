@@ -10,6 +10,7 @@ LOG_DIR="${PROJECT_ROOT}/logs"  # Passed to lib_logging.sh via environment
 # shellcheck disable=SC1091
 source "${PROJECT_ROOT}/scripts/lib_logging.sh"
 log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
+log_prune
 
 # Colors (only when interactive). YELLOW and BLUE may be unused in non-interactive mode.
 # shellcheck disable=SC2034

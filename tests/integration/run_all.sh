@@ -13,6 +13,7 @@ LOG_DIR="${PROJECT_ROOT}/logs"
 # shellcheck disable=SC1091
 source "${PROJECT_ROOT}/scripts/lib_logging.sh"
 log_init "$(basename "${BASH_SOURCE[0]}" .sh)" "test" "$PLATFORM"
+log_prune
 
 run_with_timeout() {
     local timeout_seconds=$1

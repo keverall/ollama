@@ -1055,4 +1055,6 @@ if [[ "${TEST_MODE:-false}" == "true" ]]; then
     exit 0
 fi
 
+log_prune
+
 exit 0
