@@ -8,7 +8,19 @@ all: test-unit
 test: test-all
 
 help:
-	@echo "ollama-cachyos DevOps Test Suite\n\nAvailable targets:\n  setup          - Install project dependencies (checkmake, shellcheck, etc)\n  test-unit      - Run unit tests (fast, < 30s)\n  test-integration - Run integration tests (< 5 min)\n  test-smoke     - Run smoke tests (< 60s)\n  test-e2e       - Run end-to-end tests (full workflow)\n  test-all       - Run full test suite\n  lint           - Run shellcheck, bashate, and checkmake\n  coverage       - Generate test coverage report\n  install-mocks  - Setup mock binaries for offline testing\n  clean          - Clean test artifacts"
+	@echo "ollama-cachyos DevOps Test Suite"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  setup            Install project dependencies (checkmake, shellcheck, etc)"
+	@echo "  test-unit        Run unit tests (fast, < 30s)"
+	@echo "  test-integration Run integration tests (< 5 min)"
+	@echo "  test-smoke       Run smoke tests (< 60s)"
+	@echo "  test-e2e         Run end-to-end tests (full workflow)"
+	@echo "  test-all         Run full test suite"
+	@echo "  lint             Run shellcheck, bashate, and checkmake"
+	@echo "  coverage         Generate test coverage report"
+	@echo "  install-mocks    Setup mock binaries for offline testing"
+	@echo "  clean            Clean test artifacts"
 
 # Directories
 PROJECT_DIR := .
@@ -25,7 +37,9 @@ setup:
 		elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y shellcheck; \
 		elif command -v choco >/dev/null 2>&1; then choco install shellcheck; \
 		else echo "Please install shellcheck manually."; exit 1; fi; \
-	else echo "✅ shellcheck already installed"; fi
+	else \
+		echo "✅ shellcheck already installed"; \
+	fi
 	@if ! command -v checkmake >/dev/null 2>&1; then \
 		echo "Installing checkmake..."; \
 		if command -v brew >/dev/null 2>&1; then brew install checkmake; \
@@ -34,7 +48,9 @@ setup:
 		elif command -v choco >/dev/null 2>&1; then choco install checkmake; \
 		elif command -v go >/dev/null 2>&1; then go install github.com/mrtazz/checkmake/cmd/checkmake@latest; \
 		else echo "Please install checkmake manually."; exit 1; fi; \
-	else echo "✅ checkmake already installed"; fi
+	else \
+		echo "✅ checkmake already installed"; \
+	fi
 	@echo "✅ Setup complete (Dependencies installed)"
 
 # Directories
