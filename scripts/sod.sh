@@ -812,7 +812,7 @@ get_modfile_for_model() {
         macos)
             # MacBook: Check if this is the custom DevOps model
             if [[ -n "$DEVOPS_MODEL" && "$model_name" == "$DEVOPS_MODEL" ]]; then
-                local candidates=("modfile-${DEVOPS_MODEL}" "modfile-illama3-devops" "modfile-gemma4")
+                local candidates=("modfile-${DEVOPS_MODEL}" "modfile-qwen-devops" "modfile-gemma4")
                 for candidate in "${candidates[@]}"; do
                     if [[ -f "${MODFILE_DIR}/${candidate}" ]]; then
                         echo "$candidate"
@@ -824,8 +824,14 @@ get_modfile_for_model() {
         cachyos|linux)
             # CachyOS: GPU-optimized modfiles
             case "$model_name" in
-                qwen2.5-coder:32b-gpu)
-                    [[ -f "${MODFILE_DIR}/qwen2.5-coder:32b-gpu.modelfile" ]] && echo "qwen2.5-coder:32b-gpu.modelfile" && return 0
+                qwen3-coder:30b-gpu)
+                    [[ -f "${MODFILE_DIR}/qwen3-coder-30b-gpu.modelfile" ]] && echo "qwen3-coder-30b-gpu.modelfile" && return 0
+                    ;;
+                gemma4:26b-devops)
+                    [[ -f "${MODFILE_DIR}/gemma4-26b-devops.modelfile" ]] && echo "gemma4-26b-devops.modelfile" && return 0
+                    ;;
+                devstral-small-2-gpu)
+                    [[ -f "${MODFILE_DIR}/devstral-small-2-gpu.modelfile" ]] && echo "devstral-small-2-gpu.modelfile" && return 0
                     ;;
                 qwen2.5:7b-instruct)
                     [[ -f "${MODFILE_DIR}/Qwen2.5-7B-instruct-GPU.modelfile" ]] && echo "Qwen2.5-7B-instruct-GPU.modelfile" && return 0
@@ -931,15 +937,16 @@ if [[ "$DRY_RUN" != true ]]; then
             fi
             ;;
          cachyos|linux)
- # Warm up 72B (quality) and 7B (speed) on Linux/GPU
-              for warm_model in "qwen2.5-coder:32b-gpu" "qwen2.5:7b-instruct"; do
+ # Warm up configured models on Linux/GPU
+              for warm_model in "${DEVOPS_MODEL}" "${QUICK_MODEL}" "qwen3-coder:30b-gpu"; do
+                 if [[ -z "$warm_model" ]]; then continue; fi
                  if "${OLLAMA_BIN}" list 2>/dev/null | grep -q "^${warm_model}[[:space:]:]"; then
                      log "Warming up ${warm_model}..."
                      # Increase timeout for larger models
-                     if [[ "$warm_model" == *"72b"* ]]; then
-                         WARMUP_TIMEOUT=300  # 5 minutes for 72B model
+                     if [[ "$warm_model" == *"30b"* || "$warm_model" == *"26b"* ]]; then
+                         WARMUP_TIMEOUT=300  # 5 minutes for large models
                      else
-                         WARMUP_TIMEOUT=120  # 2 minutes for 7B model
+                         WARMUP_TIMEOUT=120  # 2 minutes for smaller models
                      fi
                        if echo "Hello" | run_with_timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | tee -a "${LOG_FILE}"; then
                          log "  ✅ ${warm_model} warmed up and ready."

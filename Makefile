@@ -1,25 +1,56 @@
 # ollama-cachyos Test Suite Makefile
 # Follows DevOps principles: fast feedback, automation, reproducibility
 
-.PHONY: help test test-unit test-integration test-smoke test-e2e test-all lint coverage clean install-mocks
+.PHONY: help setup test test-unit test-integration test-smoke test-e2e test-all lint coverage clean install-mocks
 
 # Default target
 help:
 	@echo "ollama-cachyos DevOps Test Suite"
 	@echo ""
 	@echo "Available targets:"
+	@echo "  setup          - Install project dependencies (checkmake, shellcheck, etc)"
 	@echo "  test-unit      - Run unit tests (fast, < 30s)"
 	@echo "  test-integration - Run integration tests (< 5 min)"
 	@echo "  test-smoke     - Run smoke tests (< 60s)"
 	@echo "  test-e2e       - Run end-to-end tests (full workflow)"
 	@echo "  test-all       - Run full test suite"
-	@echo "  lint           - Run shellcheck on all scripts"
+	@echo "  lint           - Run shellcheck, bashate, and checkmake"
 	@echo "  coverage       - Generate test coverage report"
 	@echo "  install-mocks  - Setup mock binaries for offline testing"
 	@echo "  clean          - Clean test artifacts"
 
 # Directories
 PROJECT_DIR := .
+
+# ===============================
+# Setup
+# ===============================
+setup:
+	@echo "Checking and installing dependencies..."
+	@if ! command -v shellcheck >/dev/null 2>&1; then \
+		echo "Installing shellcheck..."; \
+		if command -v brew >/dev/null 2>&1; then brew install shellcheck; \
+		elif command -v pacman >/dev/null 2>&1; then sudo pacman -S --noconfirm shellcheck; \
+		elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y shellcheck; \
+		elif command -v choco >/dev/null 2>&1; then choco install shellcheck; \
+		else echo "Please install shellcheck manually."; exit 1; fi; \
+	else \
+		echo "✅ shellcheck already installed"; \
+	fi
+	@if ! command -v checkmake >/dev/null 2>&1; then \
+		echo "Installing checkmake..."; \
+		if command -v brew >/dev/null 2>&1; then brew install checkmake; \
+		elif command -v pacman >/dev/null 2>&1; then sudo pacman -S --noconfirm checkmake; \
+		elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y checkmake; \
+		elif command -v choco >/dev/null 2>&1; then choco install checkmake; \
+		elif command -v go >/dev/null 2>&1; then go install github.com/mrtazz/checkmake/cmd/checkmake@latest; \
+		else echo "Please install checkmake manually."; exit 1; fi; \
+	else \
+		echo "✅ checkmake already installed"; \
+	fi
+	@echo "✅ Setup complete (Dependencies installed)"
+
+# Directories
 TEST_DIR := $(PROJECT_DIR)/tests
 BATS_DIR := $(TEST_DIR)/_bats_lib
 UNIT_DIR := $(TEST_DIR)/unit
@@ -86,6 +117,9 @@ lint:
 	@echo "Running bashate..."
 	@bash -n $(SOD_SCRIPT) && bash -n $(EOD_SCRIPT)
 	@echo "✅ Bash syntax valid"
+	@echo "Running checkmake..."
+	@checkmake Makefile
+	@echo "✅ checkmake passed"
 
 # ===============================
 # Coverage

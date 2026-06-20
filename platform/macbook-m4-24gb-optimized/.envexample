@@ -15,9 +15,8 @@
 #   - Network binding (which interfaces Ollama listens on)
 #============================================================================
 # Models to ensure are present and ready
-# export FULL_MODEL_LIST="nomic-embed-text,qwen2.5-coder:7b,qwen2.5-coder:3b,llama3.1:8b"
-export MODEL_LIST="nomic-embed-text,qwen2.5-coder:3b,llama3.1:8b"
-export DEVOPS_MODEL="illama3-devops"
+export DEFAULT_MODELS="nomic-embed-text,qwen2.5-coder:14b"
+export DEVOPS_MODEL="qwen-devops"
 export QUICK_MODEL="qwen-quick"
 export OLLAMA_BIN="/usr/local/bin/ollama"
 export OLLAMA_MODELS=~/.ollama/models/ 
@@ -29,3 +28,4 @@ export OLLAMA_NUM_PARALLEL=8
 export OLLAMA_MAX_LOADED_MODELS=1
 
 export OLLAMA_HOST="[::]:11434" # Forces IPv6 + IPv4 dual-stack
+export QDRANT_PORT=6333

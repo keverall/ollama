@@ -29,7 +29,7 @@ setup() {
     mkdir -p platform/macbook-m4-24gb-optimized
     cat > platform/macbook-m4-24gb-optimized/.env << 'EOF'
 # Test environment - use mock binaries
-export MODEL_LIST="nomic-embed-text,qwen2.5-coder:14b"
+export DEFAULT_MODELS="nomic-embed-text,qwen2.5-coder:14b"
 export DEVOPS_MODEL="qwen-devops"
 # OLLAMA_BIN not set here - let it use PATH resolution
 export OLLAMA_MODELS=~/.ollama/models/
