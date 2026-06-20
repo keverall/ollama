@@ -11,7 +11,7 @@
 # Variables control:
 #   - GPU layer offloading (how much of the model runs on GPU vs CPU)
 #   - Parallelism (workers, loaded models) tuned for 32GB RAM + 24GB VRAM
-#   - Model selection (32B GPU-optimized modfiles use CUDA)
+# Model selection (30B GPU-optimized modfiles use CUDA)
 #   - Systemd env file generation (/etc/default/ollama)
 #============================================================================
 

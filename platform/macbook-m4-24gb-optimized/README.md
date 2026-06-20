@@ -67,7 +67,7 @@ Unlike x86 CPUs, Apple Silicon uses **unified memory** — both CPU and GPU shar
 | `QUICK_MODEL` | `qwen-quick` | Quick-response model for simple edits (3b parameter) |
 | `OLLAMA_MAX_LOADED_MODELS` | `1` | Max models to keep in memory simultaneously |
 | `OLLAMA_BIN` | `/usr/local/bin/ollama` | Full path to ollama binary |
-| `OLLAMA_MODELS` | `~/.ollama/models` | Where model weights are stored (~40–80GB total) |
+| `OLLAMA_MODELS` | `${HOME}/.ollama/models` | Where model weights are stored (~40–80GB total) |
 | `OLLAMA_HOST` | `[::]:11434` | Bind address (IPv6+IPv4 dual-stack) |
 | `OLLAMA_FLASH_ATTENTION` | `1` | Enable flash attention (M-series GPU optimization) |
 | `OLLAMA_KV_CACHE_TYPE` | `q4_0` | KV cache quantization (options: q4_0, q4_1, q5_0, q8_0) |

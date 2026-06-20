@@ -19,7 +19,7 @@ export DEFAULT_MODELS="nomic-embed-text,qwen2.5-coder:14b"
 export DEVOPS_MODEL="qwen-devops"
 export QUICK_MODEL="qwen-quick"
 export OLLAMA_BIN="/usr/local/bin/ollama"
-export OLLAMA_MODELS=~/.ollama/models/ 
+export OLLAMA_MODELS="${HOME}/.ollama/models" 
 
 # Memory optimizations for M4 Pro 24GB
 export OLLAMA_FLASH_ATTENTION=1
