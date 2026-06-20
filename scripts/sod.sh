@@ -360,7 +360,6 @@ configure_systemd_env() {
     # Platform-specific additions
     case "$PLATFORM" in
         cachyos|linux)
-            env_content+="OLLAMA_GPU_LAYERS=${OLLAMA_GPU_LAYERS:-50}\n"
             env_content+="CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}\n"
             ;;
         macos)
@@ -503,7 +502,6 @@ if [[ "$DRY_RUN" != true ]]; then
             export OLLAMA_KV_CACHE_TYPE="${OLLAMA_KV_CACHE_TYPE:-q4_0}"
             ;;
         cachyos|linux)
-            export OLLAMA_GPU_LAYERS="${OLLAMA_GPU_LAYERS:-50}"
             export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
             ;;
     esac
@@ -746,13 +744,16 @@ ensure_model() {
         return 0
     fi
     
-    # Check if model already exists
+    # Check if model already exists (skip early return only if modfile provided — forces update)
     if "${OLLAMA_BIN}" list 2>/dev/null | grep -q "^${model_name}[[:space:]:]"; then
-        log "  ✅ Model $model_name already present."
-        return 0
+        if [[ -z "$modfile_name" ]]; then
+            log "  ✅ Model $model_name already present."
+            return 0
+        fi
+        log "  📥 Model $model_name present, recreating from updated modfile..."
+    else
+        log "  📥 Model $model_name not found, creating/pulling..."
     fi
-    
-    log "  📥 Model $model_name not found, creating/pulling..."
     
     # If a modelfile is provided, extract its base model (FROM directive)
     local base_model=""
@@ -886,18 +887,20 @@ if [[ -n "${QUICK_MODEL:-}" ]]; then
 
     if [[ "$quick_already_handled" == false ]]; then
         log "📦 Checking quick model: ${QUICK_MODEL}"
-        # Look for modfile-${QUICK_MODEL} or modfile-quick
-        quick_modfile=""
-        candidates=("modfile-${QUICK_MODEL}" "modfile-quick")
-        for candidate in "${candidates[@]}"; do
-            if [[ -f "${MODFILE_DIR}/${candidate}" ]]; then
-                quick_modfile="$candidate"
-                break
-            fi
-        done
+        quick_modfile="$(get_modfile_for_model "$QUICK_MODEL" "$PLATFORM" || true)"
+        if [[ -z "$quick_modfile" ]]; then
+            quick_modfile=""
+            candidates=("modfile-${QUICK_MODEL}" "modfile-quick")
+            for candidate in "${candidates[@]}"; do
+                if [[ -f "${MODFILE_DIR}/${candidate}" ]]; then
+                    quick_modfile="$candidate"
+                    break
+                fi
+            done
+        fi
         
         if [[ -n "$quick_modfile" ]]; then
-            log "  Using modfile: $quick_modfile"
+            log "  Modfile candidate: ${quick_modfile} (looking in ${MODFILE_DIR})"
             ensure_model "$QUICK_MODEL" "$quick_modfile" || MODEL_CHECK_STATUS=1
         else
             log "  ⚠️  No modfile found for QUICK_MODEL='${QUICK_MODEL}'. Skipping."
@@ -938,26 +941,52 @@ if [[ "$DRY_RUN" != true ]]; then
             fi
             ;;
          cachyos|linux)
- # Warm up configured models on Linux/GPU
-              for warm_model in "${DEVOPS_MODEL}" "${QUICK_MODEL}" "qwen3-coder:30b-gpu"; do
+             # Large models + high OLLAMA_NUM_PARALLEL exhaust VRAM (num_ctx × parallel × KV cache).
+             # Temporarily cap parallel requests to 1 during warmup to ensure enough VRAM per model.
+             saved_num_parallel="${OLLAMA_NUM_PARALLEL:-1}"
+             export OLLAMA_NUM_PARALLEL=1
+             # If the server is already running, restart it to pick up the change
+             if "${OLLAMA_BIN}" ps &>/dev/null; then
+                 log "Restarting Ollama server with OLLAMA_NUM_PARALLEL=1 for warmup..."
+                 pkill -f "ollama serve" 2>/dev/null || true
+                 sleep 2
+                 nohup ollama serve >> "${OLLAMA_SERVER_LOG}" 2>&1 &
+                 sleep 2
+             fi
+
+             for warm_model in "${DEVOPS_MODEL}" "${QUICK_MODEL}" "qwen3-coder:30b-gpu"; do
                  if [[ -z "$warm_model" ]]; then continue; fi
                  if "${OLLAMA_BIN}" list 2>/dev/null | grep -q "^${warm_model}[[:space:]:]"; then
                      log "Warming up ${warm_model}..."
-                     # Increase timeout for larger models
                      if [[ "$warm_model" == *"30b"* || "$warm_model" == *"26b"* ]]; then
-                         WARMUP_TIMEOUT=300  # 5 minutes for large models
+                         WARMUP_TIMEOUT=300
                      else
-                         WARMUP_TIMEOUT=120  # 2 minutes for smaller models
+                         WARMUP_TIMEOUT=120
                      fi
-                       if echo "Hello" | run_with_timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | tee -a "${LOG_FILE}"; then
+                     if echo "Hello" | run_with_timeout "$WARMUP_TIMEOUT" "${OLLAMA_BIN}" run "$warm_model" 2>&1 | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | tee -a "${LOG_FILE}"; then
                          log "  ✅ ${warm_model} warmed up and ready."
                      else
                          log "  ⚠️  ${warm_model} warmup timed out or failed after ${WARMUP_TIMEOUT}s."
                          log "     Check ${LOG_FILE} for details."
                      fi
+                     # Unload model to free VRAM before loading the next one
+                     "${OLLAMA_BIN}" stop "$warm_model" 2>/dev/null || true
+                     sleep 1
                  fi
              done
-            ;;
+
+             # Restore original parallel setting and restart server
+             export OLLAMA_NUM_PARALLEL="$saved_num_parallel"
+             log "Restoring OLLAMA_NUM_PARALLEL=${saved_num_parallel} and restarting server..."
+             pkill -f "ollama serve" 2>/dev/null || true
+             sleep 2
+             nohup ollama serve >> "${OLLAMA_SERVER_LOG}" 2>&1 &
+             sleep 3
+             # Wait briefly for server to be ready after restart
+             if ! wait_for_ollama; then
+                 log "⚠️  Ollama server did not fully restart after warmup."
+             fi
+             ;;
     esac
 fi
 
@@ -992,6 +1021,8 @@ if [[ "$DRY_RUN" != true ]] && check_command docker; then
     else
         log "Starting Qdrant via docker-compose..."
         cd "${PROJECT_ROOT}" || exit 1
+        # Remove any stale qdrant container to avoid name conflicts
+        docker rm -f qdrant 2>/dev/null || true
         # Export QDRANT_DATA_DIR for docker-compose
         export QDRANT_DATA_DIR
         if docker-compose -f "$DOCKER_COMPOSE_FILE" up -d 2>&1 | tee -a "${LOG_FILE}"; then
