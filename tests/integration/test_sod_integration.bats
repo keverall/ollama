@@ -2,15 +2,12 @@
 # Integration tests for sod.sh with mocked dependencies
 
 setup() {
-    # Ensure PROJECT_ROOT is set for the tests before changing directory
-    if [[ -z "${PROJECT_ROOT:-}" ]]; then
-        # Auto-detect project root relative to this test file
-        PROJECT_ROOT="$(cd "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)"
-        export PROJECT_ROOT
-    fi
+    # Resolve real project root for finding mocks and scripts
+    REAL_PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)}"
+    export PROJECT_ROOT="$REAL_PROJECT_ROOT"
 
     # Ensure mocks are in PATH for all tests
-    MOCKS_DIR="${PROJECT_ROOT}/tests/mocks"
+    MOCKS_DIR="${REAL_PROJECT_ROOT}/tests/mocks"
     PATH="$MOCKS_DIR:$PATH"
     export PATH
 
@@ -43,13 +40,11 @@ export OLLAMA_KV_CACHE_TYPE=q4_0
 
 export OLLAMA_HOST="[::]:11434" # Forces IPv6 + IPv4 dual-stack
 EOF
-    # Override PLATFORM_ENV_FILE to use the test .env
+    # Override PLATFORM_ENV_FILE to use the test .env (sod.sh now respects pre-set value)
     export PLATFORM_ENV_FILE="$PWD/platform/macbook-m4-24gb-optimized/.env"
 
     # Determine actual log file created by script (will be platform-specific)
     ACTUAL_LOG=""
-
-
 }
 
 teardown() {

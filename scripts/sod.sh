@@ -89,7 +89,7 @@ esac
 # This ensures .env values take precedence over hardcoded defaults
 
 # Determine which .env file to load
-PLATFORM_ENV_FILE=""
+if [[ -z "${PLATFORM_ENV_FILE:-}" ]]; then
 case "$PLATFORM" in
     macos|macbook)
         PLATFORM_ENV_FILE="${PROJECT_ROOT}/platform/macbook-m4-24gb-optimized/.env"
@@ -101,6 +101,7 @@ case "$PLATFORM" in
         PLATFORM_ENV_FILE="${SCRIPT_DIR}/.env"  # fallback
         ;;
 esac
+fi
 
 if [[ -f "$PLATFORM_ENV_FILE" ]]; then
     log INFO "Loading environment from: $PLATFORM_ENV_FILE"
