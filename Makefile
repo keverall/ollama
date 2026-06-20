@@ -19,7 +19,7 @@ help:
 	@echo "  clean          - Clean test artifacts"
 
 # Directories
-PROJECT_DIR := ollama-devops
+PROJECT_DIR := .
 TEST_DIR := $(PROJECT_DIR)/tests
 BATS_DIR := $(TEST_DIR)/_bats_lib
 UNIT_DIR := $(TEST_DIR)/unit

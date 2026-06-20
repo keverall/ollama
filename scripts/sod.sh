@@ -787,7 +787,8 @@ ensure_model() {
         else
             log "    ❌ Modfile not found at ${MODFILE_DIR}/${modfile_name}"
             log "    Available modfiles in ${MODFILE_DIR}:"
-            ls -la "${MODFILE_DIR}/" 2>/dev/null | head -10 | while read -r line; do log "      $line"; done
+            find "${MODFILE_DIR}/" -maxdepth 1 -ls 2>/dev/null | head -10 | while read -r line; do log "      $line"; done
+
         fi
     fi
     
