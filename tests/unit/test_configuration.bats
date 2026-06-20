@@ -46,7 +46,7 @@ teardown() {
 }
 
 @test "Default OLLAMA_NUM_PARALLEL is 24" {
-    run bash -c 'source scriptdir/sod.sh && echo "$OLLAMA_NUM_PARALLEL"'
+    run bash -c 'unset OLLAMA_NUM_PARALLEL; source scriptdir/sod.sh && echo "$OLLAMA_NUM_PARALLEL"'
     [ "$status" -eq 0 ]
     [ "$output" = "24" ]
 }

@@ -4,8 +4,8 @@
 setup() {
     # Ensure PROJECT_ROOT is set for the tests before changing directory
     if [[ -z "${PROJECT_ROOT:-}" ]]; then
-        # Hardcode the project root for test environment
-        PROJECT_ROOT="/Users/keveverall/vscode/ollama/ollama-devops"
+        # Auto-detect project root relative to this test file
+        PROJECT_ROOT="$(cd "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)"
         export PROJECT_ROOT
     fi
 

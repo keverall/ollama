@@ -4,18 +4,21 @@
 setup() {
     # Ensure PROJECT_ROOT is set for the tests before changing directory
     if [[ -z "${PROJECT_ROOT:-}" ]]; then
-        # Hardcode the project root for test environment
-        PROJECT_ROOT="/Users/keveverall/vscode/ollama/ollama-devops"
+        # Auto-detect project root relative to this test file
+        PROJECT_ROOT="$(cd "$(dirname "${BATS_TEST_FILENAME}")/../.." && pwd)"
         export PROJECT_ROOT
     fi
 
     # Ensure mocks are in PATH for all tests
-    MOCKS_DIR="/Users/keveverall/vscode/ollama/ollama-devops/tests/mocks"
+    MOCKS_DIR="${PROJECT_ROOT}/tests/mocks"
     PATH="$MOCKS_DIR:$PATH"
     export PATH
 
     # Override OLLAMA_BIN to use mock instead of hardcoded path from .env
     export OLLAMA_BIN="ollama"
+
+    # Force macOS platform so tests use direct-start path (no systemd)
+    export PLATFORM_OVERRIDE=macos
 
     # Enable test mode to exit after startup
     export TEST_MODE=true
