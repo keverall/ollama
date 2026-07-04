@@ -361,6 +361,7 @@ configure_systemd_env() {
     case "$PLATFORM" in
         cachyos|linux)
             env_content+="CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}\n"
+            env_content+="OLLAMA_KV_CACHE_TYPE=${OLLAMA_KV_CACHE_TYPE:-q4_0}\n"
             ;;
         macos)
             env_content+="OLLAMA_FLASH_ATTENTION=${OLLAMA_FLASH_ATTENTION:-1}\n"
@@ -503,6 +504,7 @@ if [[ "$DRY_RUN" != true ]]; then
             ;;
         cachyos|linux)
             export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
+            export OLLAMA_KV_CACHE_TYPE="${OLLAMA_KV_CACHE_TYPE:-q4_0}"
             ;;
     esac
     
@@ -1074,7 +1076,7 @@ log "=== Start of Day Complete ==="
 log "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
 log ""
 log "Next steps:"
-log "  - Test models: ollama run <model-name>"
+log "  - Test models: ollama run $DEVOPS_MODEL --prompt 'Hello, world!'"
 log "  - Check API: curl http://localhost:${OLLAMA_PORT}/api/tags"
 log "  - View logs: tail -f ${OLLAMA_SERVER_LOG}"
 log "  - Stop environment: ./scripts/eod.sh"
