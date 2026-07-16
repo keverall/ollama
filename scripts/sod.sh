@@ -1081,7 +1081,7 @@ log "  - Check API: curl http://localhost:${OLLAMA_PORT}/api/tags"
 log "  - View logs: tail -f ${OLLAMA_SERVER_LOG}"
 log "  - Stop environment: ./scripts/eod.sh"
 log ""
-OMLX
+
 # Exit immediately in test mode (don't wait for services)
 if [[ "${TEST_MODE:-false}" == "true" ]]; then
     log "Test mode: exiting after startup"
