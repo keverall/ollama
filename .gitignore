@@ -9,6 +9,9 @@
 
 logs/
 
+# Qdrant runtime data (created by docker compose)
+data/qdrant/
+
 # Bash shell configuration
 .bashrc
 .bash_profile
