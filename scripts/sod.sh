@@ -1021,14 +1021,25 @@ if [[ "$DRY_RUN" != true ]] && check_command docker; then
     if [[ -z "$DOCKER_COMPOSE_FILE" ]]; then
         log "⚠️  docker-compose.yml not found. Skipping Qdrant."
     else
-        log "Starting Qdrant via docker-compose..."
         cd "${PROJECT_ROOT}" || exit 1
-        # Remove any stale qdrant container to avoid name conflicts
-        docker rm -f qdrant 2>/dev/null || true
         # Export QDRANT_DATA_DIR for docker-compose
         export QDRANT_DATA_DIR
-        if docker-compose -f "$DOCKER_COMPOSE_FILE" up -d 2>&1 | tee -a "${LOG_FILE}"; then
-            log "✅ Qdrant containers started!"
+
+        # Idempotent start: skip if Qdrant is already running and responding.
+        # This avoids tearing down a healthy container on every sod run
+        # (important now that sod.sh auto-runs at login).
+        if docker ps --filter "name=^qdrant$" --format '{{.Names}}' | grep -q '^qdrant$' && \
+           curl -s "http://localhost:${QDRANT_PORT}/ready" &>/dev/null; then
+            log "Qdrant already running and ready - skipping start."
+        else
+            log "Starting Qdrant via docker-compose..."
+            # Recreate only if the container exists but is not running;
+            # otherwise let compose bring it up. Avoid rm -f on a healthy container.
+            if docker ps -a --filter "name=^qdrant$" --format '{{.Names}}' | grep -q '^qdrant$'; then
+                docker start qdrant 2>&1 | tee -a "${LOG_FILE}" || true
+            fi
+            if docker-compose -f "$DOCKER_COMPOSE_FILE" up -d 2>&1 | tee -a "${LOG_FILE}"; then
+                log "✅ Qdrant containers started!"
             
             # Wait for Qdrant to be ready
             log "Waiting for Qdrant to be ready..."
