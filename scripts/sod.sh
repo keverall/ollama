@@ -1033,30 +1033,31 @@ if [[ "$DRY_RUN" != true ]] && check_command docker; then
             log "Qdrant already running and ready - skipping start."
         else
             log "Starting Qdrant via docker-compose..."
-            # Recreate only if the container exists but is not running;
-            # otherwise let compose bring it up. Avoid rm -f on a healthy container.
+            # If the container exists but is stopped, start it; otherwise
+            # let compose bring it up. Avoids rm -f on a healthy container.
             if docker ps -a --filter "name=^qdrant$" --format '{{.Names}}' | grep -q '^qdrant$'; then
                 docker start qdrant 2>&1 | tee -a "${LOG_FILE}" || true
             fi
             if docker-compose -f "$DOCKER_COMPOSE_FILE" up -d 2>&1 | tee -a "${LOG_FILE}"; then
                 log "✅ Qdrant containers started!"
-            
-            # Wait for Qdrant to be ready
-            log "Waiting for Qdrant to be ready..."
-            ready=0
-            for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
-                if curl -s "http://localhost:${QDRANT_PORT}/ready" &>/dev/null; then
-                    log "✅ Qdrant is ready."
-                    ready=1
-                    break
+
+                # Wait for Qdrant to be ready
+                log "Waiting for Qdrant to be ready..."
+                ready=0
+                for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+                    if curl -s "http://localhost:${QDRANT_PORT}/ready" &>/dev/null; then
+                        log "✅ Qdrant is ready."
+                        ready=1
+                        break
+                    fi
+                    sleep 1
+                done
+                if [[ $ready -ne 1 ]]; then
+                    log "⚠️ Qdrant readiness check timed out, but containers may still be starting."
                 fi
-                sleep 1
-            done
-            if [[ $ready -ne 1 ]]; then
-                log "⚠️ Qdrant readiness check timed out, but containers may still be starting."
+            else
+                log "⚠️  Qdrant startup had issues, continuing..."
             fi
-        else
-            log "⚠️  Qdrant startup had issues, continuing..."
         fi
     fi
 fi
