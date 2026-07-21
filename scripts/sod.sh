@@ -459,24 +459,13 @@ if [[ "$DRY_RUN" != true ]]; then
         
         # Also kill any lingering Ollama processes
         log "Cleaning up stray Ollama processes..."
-         pgrep -f "ollama" 2>/dev/null | while read -r pid; do
-             if [[ "$pid" != "$SCRIPT_PID" ]]; then
-                 if ! ps -p "$pid" -o args= 2>/dev/null | grep -q "sod\.sh"; then
-                     kill -TERM "$pid" 2>/dev/null || true
-                 fi
-             fi
-         done || true
+        # Use specific pattern to match only ollama binary, not scripts containing "ollama"
+        pkill -f "^.*/ollama( serve)?$" 2>/dev/null || true
         sleep 2
         
         # Force kill any remaining
         log "Sending SIGKILL to remaining Ollama processes..."
-         pgrep -f "ollama" 2>/dev/null | while read -r pid; do
-             if [[ "$pid" != "$SCRIPT_PID" ]]; then
-                 if ! ps -p "$pid" -o args= 2>/dev/null | grep -q "sod\.sh"; then
-                     kill -9 "$pid" 2>/dev/null || true
-                 fi
-             fi
-         done || true
+        pkill -9 -f "^.*/ollama( serve)?$" 2>/dev/null || true
         ;;
     esac
     log "✅ Previous Ollama instances stopped."

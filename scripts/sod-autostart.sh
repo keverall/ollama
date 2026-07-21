@@ -5,5 +5,6 @@ cd /home/keverall/repos/ollama || exit 1
 /home/keverall/repos/ollama/scripts/sod.sh
 status=$?
 echo
-echo "[sod.sh finished - exit $status]  Press any key to close."
-read -n1
+echo "[sod.sh finished - exit $status]"
+echo "You can now use this terminal, or close it."
+exec bash
